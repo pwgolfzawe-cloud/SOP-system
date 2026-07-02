@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>iNT — ระบบบริหารจัดการกระบวนการ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Sarabun","Segoe UI",sans-serif;background:#f0f4f8;min-height:100vh;display:flex;flex-direction:column}.hdr{background:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e8f0;position:relative;overflow:hidden}.hdr::after{content:"";position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 120px 90px 0;border-color:transparent #e8f4fb transparent transparent}.hdr-logo{height:54px;width:auto}.hdr-info{text-align:right;position:relative;z-index:1}.hdr-info-title{font-size:13px;font-weight:700;color:#005992}.hdr-info-sub{font-size:11px;color:#898c8e;margin-top:2px}.tbar{background:linear-gradient(135deg,#003063 0%,#005992 60%,#0073b5 100%);padding:22px 28px;position:relative;overflow:hidden}.tbar::before{content:"";position:absolute;top:0;right:0;width:40%;height:100%;background:linear-gradient(135deg,transparent 50%,rgba(0,155,217,.15) 50%);pointer-events:none}.tbar::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f18700 0%,rgba(241,135,0,.3) 60%,transparent 100%)}.tbar-main{font-size:20px;font-weight:800;color:#fff;position:relative;z-index:1}.tbar-sub{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px;position:relative;z-index:1}.main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px}.cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:860px}@media(max-width:600px){.cards{grid-template-columns:1fr}}.card{background:#fff;border-radius:16px;border:2px solid #e2e8f0;padding:32px 28px;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;align-items:flex-start;gap:14px;position:relative;overflow:hidden;text-decoration:none;color:inherit}.card:hover{border-color:var(--c,#005992);box-shadow:0 12px 40px rgba(0,89,146,.18);transform:translateY(-3px)}.card:hover .c-arr{opacity:1;transform:translateX(4px)}.card:hover .c-ico{transform:scale(1.08)}.card.dis{cursor:not-allowed;opacity:.55;pointer-events:none}.c-ico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;transition:transform .22s;flex-shrink:0}.c-tag{font-size:11px;font-weight:700;color:#fff;padding:2px 9px;border-radius:10px;display:inline-block;margin-bottom:8px}.c-title{font-size:17px;font-weight:700;color:#1f2937;line-height:1.4;margin-bottom:6px}.c-desc{font-size:13px;color:#6b7280;line-height:1.6}.c-arr{font-size:20px;position:absolute;bottom:20px;right:22px;opacity:0;transition:all .22s;color:var(--c,#005992)}.c-soon{font-size:11px;font-weight:700;background:#f1f5f9;color:#94a3b8;padding:3px 10px;border-radius:10px;position:absolute;top:16px;right:16px}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:8px;border:1.5px solid}.footer{text-align:center;padding:14px;font-size:12px;color:#898c8e;border-top:1px solid #e2e8f0;background:#fff}.footer strong{color:#005992}
+/* Layer panels */
+#raCards{display:none;flex:1;flex-direction:column;}
+#raDetail{display:none;flex:1;flex-direction:column;}
+.layer-tbar{background:linear-gradient(135deg,#003063 0%,#005992 60%,#0073b5 100%);padding:18px 28px;position:relative;overflow:hidden;}
+.layer-tbar::before{content:"";position:absolute;top:0;right:0;width:40%;height:100%;background:linear-gradient(135deg,transparent 50%,rgba(0,155,217,.15) 50%);pointer-events:none}
+.layer-tbar::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f18700 0%,rgba(241,135,0,.3) 60%,transparent 100%)}
+.layer-tbar-main{font-size:18px;font-weight:800;color:#fff;position:relative;z-index:1;}
+.layer-tbar-sub{font-size:13px;color:rgba(255,255,255,.7);margin-top:3px;position:relative;z-index:1;}
+.back-bar{background:#fff;border-bottom:1.5px solid #e2e8f0;padding:10px 28px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.btn-back{padding:6px 15px;background:#f0f6ff;border:1.5px solid #bfdbfe;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;color:#003063;display:inline-flex;align-items:center;gap:6px;transition:.15s;}
+.btn-back:hover{background:#dbeafe;}
+.back-label{font-size:14px;font-weight:600;color:#64748b;}
+.detail-body{padding:22px 28px 48px;overflow-y:auto;flex:1;}
+.detail-inner{max-width:1480px;margin:0 auto;}
+.sec-label{display:flex;align-items:center;gap:10px;margin:18px 0 11px;font-size:12px;font-weight:700;color:#64748b;letter-spacing:.07em;text-transform:uppercase;}
+.sec-label::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+.sec-badge{padding:2px 9px;border-radius:6px;font-size:11px;font-weight:800;background:#f1f5f9;color:#475569;}
+.sec-note{font-weight:400;text-transform:none;letter-spacing:0;color:#94a3b8;font-size:12px;margin-left:4px;}
+.jm-wrap{background:#fff;border-radius:13px;border:1.5px solid #e2e8f0;padding:20px;overflow-x:auto;}
+.jm-inner{display:flex;align-items:flex-start;gap:0;min-width:max-content;}
+.jm-step{width:180px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;}
+.jm-num{width:34px;height:34px;border-radius:50%;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.13);}
+.jm-card{border:1.5px solid;border-radius:12px;padding:10px 12px;text-align:left;width:164px;}
+.jm-card-name{font-size:12px;font-weight:700;color:#1e293b;margin-bottom:4px;line-height:1.35;}
+.jm-lane-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;color:#fff;display:inline-block;margin-bottom:4px;}
+.jm-desc{font-size:10px;color:#64748b;line-height:1.4;}
+.jm-arrow{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding-top:9px;}
+.sl-wrap{background:#fff;border-radius:13px;border:1.5px solid #e2e8f0;overflow:auto;}
+.sl-table{border-collapse:collapse;min-width:max-content;width:100%;}
+.sl-head th{padding:9px 13px;font-size:11px;font-weight:700;text-align:center;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0;z-index:10;line-height:1.4;}
+.sl-head th:first-child{text-align:left;min-width:130px;position:sticky;left:0;z-index:11;background:#f0f4f8;font-size:12px;}
+.snum{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:#fff;font-size:10px;font-weight:800;margin-bottom:2px;}
+.sl-row td{border:1px solid #e8eef4;padding:0;vertical-align:top;}
+.sl-row td.lane-hd{min-width:130px;max-width:140px;padding:11px 13px;font-size:12.5px;font-weight:700;color:#334155;position:sticky;left:0;z-index:5;border-right:2.5px solid #d1d9e6;}
+.sl-cell{padding:9px 11px;min-height:85px;min-width:140px;display:flex;flex-direction:column;justify-content:center;gap:3px;}
+.sl-cell-name{font-size:11px;font-weight:700;color:#1e293b;line-height:1.3;}
+.sl-cell-desc{font-size:10px;color:#64748b;line-height:1.4;margin-top:2px;}
+.rpill{display:inline-block;padding:2px 7px;border-radius:7px;font-size:10px;font-weight:700;margin-top:2px;}
+.rpill-p{color:#fff;}.rpill-i{background:#e2e8f0;color:#475569;}
+.sl-sop-badges{display:flex;flex-direction:column;gap:3px;margin-top:7px;border-top:1px dashed rgba(0,0,0,.08);padding-top:6px;}
+.sl-sop-badge{display:flex;flex-direction:column;padding:4px 7px;border-radius:6px;color:#fff;line-height:1.35;gap:1px;}
+/* Swimlane edit-mode controls */
+.sl-cell-edit-btn{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.9);border:1px solid #e2e8f0;border-radius:5px;padding:2px 6px;font-size:11px;cursor:pointer;color:#475569;line-height:1;font-family:'Sarabun',sans-serif;z-index:2;}
+.sl-cell-edit-btn:hover{background:#fff;border-color:#94a3b8;color:#1e293b;}
+.sl-add-primary-btn{display:block;margin-top:4px;padding:3px 8px;background:#f0f9ff;border:1.5px dashed #38bdf8;border-radius:6px;font-size:10px;font-weight:700;color:#0369a1;cursor:pointer;font-family:'Sarabun',sans-serif;width:100%;text-align:center;}
+.sl-add-primary-btn:hover{background:#e0f2fe;border-color:#0284c7;}
+
+/* === SOP Modal === */
+.sop-modal-bg{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.sop-modal-bg.open{opacity:1;pointer-events:auto}
+.sop-modal{background:#fff;border-radius:18px;width:660px;max-width:95vw;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.28);transform:translateY(18px);transition:transform .22s}
+.sop-modal-bg.open .sop-modal{transform:translateY(0)}
+.sop-modal-hdr{padding:18px 22px 14px;border-bottom:1.5px solid #e2e8f0;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.sop-modal-title{font-size:15px;font-weight:800;color:#003063;line-height:1.3}
+.sop-modal-sub{font-size:12px;color:#64748b;margin-top:3px}
+.sop-modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:2px 8px;border-radius:7px;transition:.15s;line-height:1;font-family:inherit}
+.sop-modal-close:hover{background:#f1f5f9;color:#475569}
+.sop-modal-search{padding:10px 18px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.sop-search-input{width:100%;padding:8px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:13px;color:#1e293b;outline:none;transition:.15s}
+.sop-search-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.15)}
+.sop-modal-list{flex:1;overflow-y:auto;padding:4px 0}
+.sop-group-hdr{padding:6px 18px;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9}
+.sop-item{display:flex;align-items:flex-start;gap:11px;padding:10px 18px;cursor:pointer;transition:.12s;border-bottom:1px solid #f8fafc}
+.sop-item:hover{background:#f0f6ff}
+.sop-item input[type=checkbox]{width:16px;height:16px;accent-color:#005992;cursor:pointer;flex-shrink:0;margin-top:3px}
+.sop-item-name{font-size:13px;font-weight:600;color:#1e293b;line-height:1.35}
+.sop-item-meta{font-size:11px;color:#94a3b8;margin-top:2px}
+.sop-empty{text-align:center;padding:44px 20px;color:#94a3b8;font-size:13px}
+.sop-modal-ftr{padding:13px 20px;border-top:1.5px solid #e2e8f0;display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;align-items:center}
+.sop-ftr-count{font-size:12px;color:#64748b;font-weight:600;flex:1}
+/* === Modal buttons — ใช้ร่วมกันทุก modal === */
+.btn-modal-cancel{padding:8px 18px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;color:#475569;cursor:pointer;transition:.15s}
+.btn-modal-cancel:hover{background:#e2e8f0}
+.btn-modal-save{padding:8px 22px;background:#005992;border:1.5px solid #005992;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer;transition:.15s}
+.btn-modal-save:hover{background:#003063;border-color:#003063}
+/* === Back bar nav buttons === */
+.btn-home{padding:6px 15px;background:#fff8f0;border:1.5px solid #fed7aa;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;color:#92400e;display:inline-flex;align-items:center;gap:6px;transition:.15s;}
+.btn-home:hover{background:#ffedd5;}
+/* === Edit mode toolbar buttons === */
+.btn-edit-done{padding:5px 14px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #86efac;background:#dcfce7;color:#166534;transition:.15s;}
+.btn-edit-done:hover{background:#bbf7d0;}
+.btn-edit-toggle{padding:5px 14px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #cbd5e1;background:#fff;color:#334155;transition:.15s;}
+.btn-edit-toggle:hover{background:#f1f5f9;}
+.btn-lane-mgr{padding:5px 14px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #7dd3fc;background:#e0f2fe;color:#0369a1;transition:.15s;}
+.btn-lane-mgr:hover{background:#bae6fd;}
+/* JM card SOP badges */
+.jm-card{cursor:pointer;transition:opacity .15s}
+.jm-card:hover{opacity:.85}
+.jm-sop-badges{margin-top:6px;display:flex;flex-wrap:wrap;gap:3px}
+.jm-sop-badge{display:inline-flex;align-items:flex-start;font-size:9px;font-weight:700;border-radius:6px;line-height:1.4;width:100%;word-break:break-word;white-space:normal;overflow:visible}
+.jm-add-hint{font-size:9.5px;color:#cbd5e1;margin-top:5px;font-style:italic}
+/* === Step Edit Mode === */
+.jm-edit-controls{display:flex;gap:3px;margin-top:7px;padding-top:6px;border-top:1px dashed rgba(0,0,0,.1);justify-content:flex-end;}
+.jm-edit-btn{padding:2px 7px;border-radius:6px;border:1px solid;font-size:11px;font-weight:700;cursor:pointer;font-family:'Sarabun',sans-serif;transition:.12s;line-height:1.6;}
+.jm-edit-btn.jm-move{background:#f1f5f9;border-color:#cbd5e1;color:#475569;}
+.jm-edit-btn.jm-move:hover{background:#e2e8f0;}
+.jm-edit-btn.jm-edit{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;}
+.jm-edit-btn.jm-edit:hover{background:#dbeafe;}
+.jm-edit-btn.jm-del{background:#fff1f2;border-color:#fecdd3;color:#e11d48;}
+.jm-edit-btn.jm-del:hover{background:#ffe4e6;}
+.jm-add-step-wrap{display:flex;flex-direction:column;align-items:center;padding-top:9px;flex-shrink:0;}
+.jm-add-step-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:#f0f6ff;border:2px dashed #93c5fd;color:#2563eb;font-size:26px;cursor:pointer;transition:.15s;line-height:1;}
+.jm-add-step-btn:hover{background:#dbeafe;border-color:#3b82f6;}
+/* === Step Modal === */
+.step-modal-bg{position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.step-modal-bg.open{opacity:1;pointer-events:auto}
+.step-modal{background:#fff;border-radius:18px;width:520px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.28);transform:translateY(18px);transition:transform .22s}
+.step-modal-bg.open .step-modal{transform:translateY(0)}
+.step-modal-hdr{padding:18px 22px 14px;border-bottom:1.5px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.step-modal-title{font-size:15px;font-weight:800;color:#003063}
+.step-modal-body{padding:16px 22px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.step-form-label{font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;display:block}
+.step-form-input,.step-form-textarea,.step-form-select{width:100%;padding:9px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:13px;color:#1e293b;outline:none;transition:.15s;background:#fff}
+.step-form-input:focus,.step-form-textarea:focus,.step-form-select:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.15)}
+.step-form-textarea{min-height:80px;resize:vertical}
+.step-involves-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.step-involves-item{display:flex;align-items:center;gap:5px;font-size:12px;color:#334155;cursor:pointer;padding:4px 8px;border-radius:7px;border:1px solid #e2e8f0;background:#f8fafc;}
+.step-involves-item:hover{background:#f0f6ff;border-color:#bfdbfe}
+.step-involves-item input{width:14px;height:14px;accent-color:#005992}
+.step-modal-ftr{padding:13px 20px;border-top:1.5px solid #e2e8f0;display:flex;gap:10px;justify-content:flex-end;flex-shrink:0}
+.step-new-lane-row{display:flex;gap:6px;margin-top:10px;padding-top:9px;border-top:1px dashed #e2e8f0;}
+.step-new-lane-input{flex:1;padding:7px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:13px;color:#1e293b;outline:none;transition:.15s;}
+.step-new-lane-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.15);}
+.step-new-lane-btn{padding:7px 14px;background:#0369a1;color:#fff;border:none;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.15s;}
+.step-new-lane-btn:hover{background:#0284c7;}
+.lane-modal-row{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:6px;}
+.lane-modal-num{width:22px;height:22px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#64748b;flex-shrink:0;}
+.lane-modal-name{flex:1;font-size:13px;font-weight:600;color:#1e293b;}
+.lane-modal-btns{display:flex;gap:4px;flex-shrink:0;}
+.lane-modal-add{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0;}
+.lane-modal-input{flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:13px;color:#1e293b;outline:none;transition:.15s;}
+.lane-modal-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.15);}
+.lane-modal-addbtn{padding:8px 16px;background:#005992;color:#fff;border:none;border-radius:9px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.15s;}
+.lane-modal-addbtn:hover{background:#0369a1;}
+</style>
+</head>
+<body>
+<div class="hdr"><img class="hdr-logo" src="data:image/png;base64,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" alt="iNT"><div class="hdr-info"><div class="hdr-info-title">สถาบันบริหารจัดการเทคโนโลยีและนวัตกรรม</div><div class="hdr-info-sub">Institute of Technology and Innovation Management · Mahidol University</div></div></div>
+<div id="layer1" style="display:flex;flex-direction:column;flex:1"><div class="tbar"><div class="tbar-main">&#x1F4C2; ระบบบริหารจัดการกระบวนการ iNT</div><div class="tbar-sub">เลือกประเภทงานที่ต้องการจัดการ</div></div><div class="main"><div class="cards"><div class="card" style="--c:#009bd9" onclick="showRACards()"><div class="c-ico" style="background:#e8f7fd">&#x1F3E2;</div><div><div class="c-tag" style="background:#009bd9">บริการหลัก</div><div class="c-title">งานด้านบริการหลัก<br>ของสถาบันฯ</div><div class="c-desc">ข้อมูลโครงการ บริการวิชาการ ความร่วมมือ<br>และงานด้านเทคโนโลยีนวัตกรรมของสถาบัน</div><div class="chips"><span class="chip" style="color:#009bd9;border-color:#bae6fd">โครงการทุน</span><span class="chip" style="color:#009bd9;border-color:#bae6fd">บริการวิชาการ</span><span class="chip" style="color:#009bd9;border-color:#bae6fd">ความร่วมมือ</span></div></div><span class="c-arr">&#x2192;</span></div><a class="card" href="int_sop_interactive.html" style="--c:#005992"><div class="c-ico" style="background:#e8f2fa">&#x1F4CB;</div><div><div class="c-tag" style="background:#005992">กระบวนการ</div><div class="c-title">กระบวนการหลัก<br>SOP / SLA / WI</div><div class="c-desc">จัดการ SOP ย่อย ติดตามสถานะการอนุมัติ<br>ครบ 4 ระดับ Export Excel และย้ายกลุ่มงาน</div><div class="chips"><span class="chip" style="color:#005992;border-color:#bfdbfe">SOP</span><span class="chip" style="color:#005992;border-color:#bfdbfe">SLA</span><span class="chip" style="color:#005992;border-color:#bfdbfe">WI</span><span class="chip" style="color:#f18700;border-color:#fed7aa">142 รายการ</span></div></div><span class="c-arr">&#x2192;</span></div></a></div></div>
+<div id="layer2" style="display:none;flex-direction:column;flex:1"><div class="layer-tbar"><div class="layer-tbar-main">&#x1F3E2; งานด้านบริการหลักของสถาบันฯ</div><div class="layer-tbar-sub">Research and Academic Services (RA) · เลือก Service ที่ต้องการดู</div></div><div class="back-bar"><button class="btn-home" onclick="goHome()">&#x1F3E0; หน้าหลัก</button><span class="back-label">หน้าหลัก &#x203A; งานบริการหลัก</span></div><div class="main"><div class="cards" style="grid-template-columns:1fr 1fr">
+<div class="card" style="--c:#009bd9" onclick="showDetail('s1')"><div class="c-ico" style="background:#e8f7fd">👤</div><div><div class="c-tag" style="background:#009bd9">ขึ้นทะเบียน</div><div class="c-title">ขึ้นทะเบียนบุคลากรที่ปรึกษา</div><div class="c-desc">ขึ้นทะเบียนบุคลากรเป็นที่ปรึกษาในระบบที่ปรึกษาแห่งชาติ (นอลปรึกษา)</div><div class="chips"><span class="chip" style="color:#009bd9;border-color:#bae6fd">ส่วนงาน</span><span class="chip" style="color:#009bd9;border-color:#bae6fd">INT (RA)</span><span class="chip" style="color:#009bd9;border-color:#bae6fd">นอลปรึกษา</span></div></div><span class="c-arr">&#x2192;</span></div>
+<div class="card" style="--c:#005992" onclick="showDetail('s2')"><div class="c-ico" style="background:#e8f2fa">🔬</div><div><div class="c-tag" style="background:#005992">วิจัย หมวด 1</div><div class="c-title">บริหารโครงการวิจัย (หมวด 1)</div><div class="c-desc">บริหารจัดการโครงการให้บริการรับทำวิจัยและบริการทางวิชาการ ตั้งแต่รับโจทย์จนปิดโครงการ</div><div class="chips"><span class="chip" style="color:#005992;border-color:#bfdbfe">ส่วนงาน</span><span class="chip" style="color:#005992;border-color:#bfdbfe">INT</span><span class="chip" style="color:#005992;border-color:#bfdbfe">กองคลัง</span><span class="chip" style="color:#005992;border-color:#bfdbfe">ผู้ว่าจ้าง</span></div></div><span class="c-arr">&#x2192;</span></div>
+<div class="card" style="--c:#f18700" onclick="showDetail('s3')"><div class="c-ico" style="background:#fff3e0">📚</div><div><div class="c-tag" style="background:#f18700">วิชาการ หมวด 2</div><div class="c-title">โครงการทางวิชาการ (หมวด 2)</div><div class="c-desc">ให้คำปรึกษาและสนับสนุนโครงการให้บริการทางวิชาการของส่วนงาน ม.มหิดล</div><div class="chips"><span class="chip" style="color:#f18700;border-color:#fed7aa">ส่วนงาน</span><span class="chip" style="color:#f18700;border-color:#fed7aa">INT</span><span class="chip" style="color:#f18700;border-color:#fed7aa">คณะกรรมการ</span></div></div><span class="c-arr">&#x2192;</span></div>
+<div class="card" style="--c:#6366f1" onclick="showDetail('s4')"><div class="c-ico" style="background:#ede9fe">🤝</div><div><div class="c-tag" style="background:#6366f1">MICC</div><div class="c-title">MICC — Matching โจทย์วิจัย</div><div class="c-desc">ศูนย์ร่วมคิดพาณิชย์นวัตกรรม: เชื่อมโยงโจทย์จากภาคเอกชนกับผู้เชี่ยวชาญ ม.มหิดล</div><div class="chips"><span class="chip" style="color:#6366f1;border-color:#c7d2fe">ผู้ว่าจ้าง</span><span class="chip" style="color:#6366f1;border-color:#c7d2fe">MICC</span><span class="chip" style="color:#6366f1;border-color:#c7d2fe">ผู้เชี่ยวชาญ</span></div></div><span class="c-arr">&#x2192;</span></div>
+
+<div class="card" style="--c:#10b981" onclick="showDetail('s5')"><div class="c-ico" style="background:#d1fae5">🎓</div><div><div class="c-tag" style="background:#10b981">CATS</div><div class="c-title">ศูนย์บริการวิชาการและฝึกอบรม<br>(CATS)</div><div class="c-desc">บริหารหลักสูตรฝึกอบรม ตั้งแต่วิเคราะห์ความต้องการจนถึงประเมินผล</div><div class="chips"><span class="chip" style="color:#10b981;border-color:#a7f3d0">CATS Team</span><span class="chip" style="color:#10b981;border-color:#a7f3d0">ทีม SC</span><span class="chip" style="color:#10b981;border-color:#a7f3d0">การเงิน</span></div></div><span class="c-arr">&#x2192;</span></div>
+</div></div></div>
+<div id="layer3" style="display:none;flex-direction:column;flex:1"><div class="layer-tbar"><div class="layer-tbar-main" id="l3title"></div></div><div class="back-bar"><button class="btn-home" onclick="goHome()">&#x1F3E0; หน้าหลัก</button><button class="btn-back" onclick="goRACards()">&#x2190; กลับ</button><span class="back-label" id="l3breadcrumb"></span></div><div class="detail-body"><div class="detail-inner" id="l3content"></div></div></div><div class="footer"><strong>iNT Mahidol</strong> &#xB7; ระบบบริหารจัดการกระบวนการ &#xB7; จัดทำโดย SOP Officer</div>
+<script>
+// Init globals early so no reference errors even if later code fails
+var _staffPhotos = {};
+var _mCtx = {svcId:'', stepId:0, selected:{}, laneIdx:0, primLanes:[0], laneTemp:{}};
+var _sopFlat = [];
+var _editModeSvc = '';
+var _STEPS_KEY = 'int_custom_steps_v1';
+var _stepCtx = {svcId:'', stepId:null, mode:'add'};
+var _LANES_KEY = 'int_custom_lanes_v1';
+var _laneModalSvcId = '';
+var _laneModalLanesTmp = [];
+
+const SVC=[{"id": "s1", "name": "ขึ้นทะเบียนบุคลากรที่ปรึกษา", "icon": "👤", "color": "#009bd9", "colorLight": "#e0f4ff", "tag": "ขึ้นทะเบียน", "desc": "ขึ้นทะเบียนบุคลากรเป็นที่ปรึกษาในระบบที่ปรึกษาแห่งชาติ (นอลปรึกษา)", "chips": ["ส่วนงาน", "INT (RA)", "นอลปรึกษา"], "lanes": ["ส่วนงาน", "INT (RA)", "ที่ปรึกษาแห่งชาติ"], "laneColors": ["#e0f7ff", "#dbeafe", "#f0f0f0"], "steps": [{"id": 1, "name": "ตรวจสอบคุณสมบัติ", "lane": 0, "involves": [], "desc": "ส่วนงานตรวจสอบว่าบุคลากรมีคุณสมบัติตามเกณฑ์ที่กำหนด"}, {"id": 2, "name": "จัดเตรียมเอกสาร", "lane": 0, "involves": [], "desc": "รวบรวมเอกสารที่จำเป็นสำหรับการขอขึ้นทะเบียน"}, {"id": 3, "name": "ยื่นเอกสารมา INT", "lane": 0, "involves": [1], "desc": "ส่วนงานส่งเอกสารทั้งหมดมายัง INT เพื่อดำเนินการต่อ"}, {"id": 4, "name": "ดำเนินการขึ้นทะเบียน", "lane": 1, "involves": [2], "desc": "INT ติดต่อและดำเนินการขอขึ้นทะเบียนกับที่ปรึกษาแห่งชาติ"}, {"id": 5, "name": "พิจารณาและแจ้งผล", "lane": 2, "involves": [1], "desc": "ที่ปรึกษาแห่งชาติพิจารณาคำขอและแจ้งผลกลับ INT"}, {"id": 6, "name": "แจ้งผลและบันทึก", "lane": 1, "involves": [0], "desc": "INT รับผล บันทึกข้อมูล และแจ้งผลให้ส่วนงานทราบ"}]}, {"id": "s2", "name": "บริหารโครงการวิจัย (หมวด 1)", "icon": "🔬", "color": "#005992", "colorLight": "#e0ecf8", "tag": "วิจัย หมวด 1", "desc": "บริหารจัดการโครงการให้บริการรับทำวิจัยและบริการทางวิชาการ ตั้งแต่รับโจทย์จนปิดโครงการ", "chips": ["ส่วนงาน", "INT", "กองคลัง", "ผู้ว่าจ้าง"], "lanes": ["ส่วนงาน/นักวิจัย", "INT (RA)", "กองคลัง", "ผู้ว่าจ้าง"], "laneColors": ["#e8f4fd", "#dbeafe", "#fef9e7", "#f0fff4"], "steps": [{"id": 1, "name": "3.1 ประชาสัมพันธ์", "lane": 1, "involves": [0], "desc": "INT ประชาสัมพันธ์เชิญชวนให้ส่วนงานยื่นข้อเสนอโครงการ"}, {"id": 2, "name": "3.2 ยื่นข้อเสนอ", "lane": 0, "involves": [1], "desc": "ส่วนงานจัดทำและยื่นข้อเสนอโครงการมายัง INT"}, {"id": 3, "name": "3.3 ลงนามสัญญา", "lane": 1, "involves": [0, 3], "desc": "INT จัดทำและดำเนินการลงนามสัญญา/ข้อตกลงกับผู้ว่าจ้าง"}, {"id": 4, "name": "3.4 ขึ้นทะเบียน", "lane": 1, "involves": [], "desc": "INT ขึ้นทะเบียนโครงการในระบบติดตามโครงการ"}, {"id": 5, "name": "3.5 ส่งมอบ/เบิกเงิน", "lane": 0, "involves": [1, 2], "desc": "ส่วนงานส่งมอบผลงานและยื่นขอเบิกเงินค่าจ้างผ่าน INT"}, {"id": 6, "name": "3.6 จัดสรรเงิน", "lane": 2, "involves": [0, 1], "desc": "กองคลังตรวจสอบและดำเนินการโอนเงินค่าจ้างให้ส่วนงาน"}, {"id": 7, "name": "3.7 เปลี่ยนแปลง", "lane": 0, "involves": [1], "desc": "กรณีต้องการเปลี่ยนแปลงรายละเอียดโครงการ ส่วนงานยื่นขอผ่าน INT"}, {"id": 8, "name": "3.8 ปิดโครงการ", "lane": 1, "involves": [0], "desc": "เมื่องานเสร็จสมบูรณ์ INT ดำเนินการปิดโครงการในระบบ"}, {"id": 9, "name": "3.9 รายงานสิ้นปี", "lane": 1, "involves": [], "desc": "INT รวบรวมและรายงานข้อมูลโครงการทั้งหมดเมื่อสิ้นปีงบประมาณ"}]}, {"id": "s3", "name": "โครงการทางวิชาการ (หมวด 2)", "icon": "📚", "color": "#f18700", "colorLight": "#fff3e0", "tag": "วิชาการ หมวด 2", "desc": "ให้คำปรึกษาและสนับสนุนโครงการให้บริการทางวิชาการของส่วนงาน ม.มหิดล", "chips": ["ส่วนงาน", "INT", "คณะกรรมการ"], "lanes": ["ส่วนงาน", "INT (RA)", "คณะกรรมการ"], "laneColors": ["#fff8f0", "#dbeafe", "#f5f5f5"], "steps": [{"id": 1, "name": "4.1 จัดตั้งโครงการ", "lane": 0, "involves": [1], "desc": "ส่วนงานจัดตั้งโครงการและขอรับคำปรึกษาจาก INT"}, {"id": 2, "name": "ให้คำปรึกษา", "lane": 1, "involves": [0], "desc": "INT ให้คำปรึกษาด้านกระบวนการและข้อกำหนดที่เกี่ยวข้อง"}, {"id": 3, "name": "ตรวจสอบเอกสาร", "lane": 1, "involves": [2], "desc": "INT ตรวจสอบและรับรองเอกสารโครงการ"}, {"id": 4, "name": "ขึ้นทะเบียนโครงการ", "lane": 1, "involves": [0], "desc": "INT ดำเนินการขึ้นทะเบียนโครงการในระบบ"}, {"id": 5, "name": "4.2 รายงานสิ้นปี", "lane": 0, "involves": [1], "desc": "ส่วนงานรายงานข้อมูลโครงการเมื่อสิ้นปีงบประมาณ"}, {"id": 6, "name": "รวบรวมข้อมูล", "lane": 1, "involves": [], "desc": "INT รวบรวมข้อมูลโครงการทุกส่วนงาน จัดทำรายงานสรุป"}]}, {"id": "s4", "name": "MICC — Matching โจทย์วิจัย", "icon": "🤝", "color": "#6366f1", "colorLight": "#ede9fe", "tag": "MICC", "desc": "ศูนย์ร่วมคิดพาณิชย์นวัตกรรม: เชื่อมโยงโจทย์จากภาคเอกชนกับผู้เชี่ยวชาญ ม.มหิดล", "chips": ["ผู้ว่าจ้าง", "MICC", "ผู้เชี่ยวชาญ"], "lanes": ["ผู้ว่าจ้าง (ภาคเอกชน)", "MICC / INT", "ผู้เชี่ยวชาญ/นักวิจัย"], "laneColors": ["#f0fff4", "#ede9fe", "#faf5ff"], "steps": [{"id": 1, "name": "รับโจทย์วิจัย", "lane": 1, "involves": [0], "desc": "MICC แสวงหาและรับโจทย์วิจัย/นวัตกรรมจากภาคเอกชน"}, {"id": 2, "name": "Matching ผู้เชี่ยวชาญ", "lane": 1, "involves": [2], "desc": "MICC ค้นหาและจับคู่โจทย์กับผู้เชี่ยวชาญที่เหมาะสม"}, {"id": 3, "name": "ลงนาม NDA", "lane": 1, "involves": [0, 2], "desc": "จัดทำและลงนามข้อตกลงรักษาความลับ (NDA) ทุกฝ่าย"}, {"id": 4, "name": "ประชุมร่วม", "lane": 1, "involves": [0, 2], "desc": "จัดประชุมร่วมระหว่างผู้ว่าจ้าง ผู้เชี่ยวชาญ และ MICC"}, {"id": 5, "name": "ร่างขอบเขตงาน", "lane": 1, "involves": [], "desc": "MICC ร่างและจัดทำขอบเขตงาน (TOR) จากผลการประชุม"}, {"id": 6, "name": "เจรจาราคา", "lane": 1, "involves": [0], "desc": "เสนอขอบเขตและเจรจาราคากับผู้ว่าจ้างจนตกลงได้"}, {"id": 7, "name": "ลงนามสัญญา", "lane": 1, "involves": [0], "desc": "จัดทำสัญญาอย่างเป็นทางการและลงนามทุกฝ่าย"}, {"id": 8, "name": "ดำเนินโครงการ", "lane": 2, "involves": [1], "desc": "ผู้เชี่ยวชาญดำเนินการวิจัยตามขอบเขตงานที่ตกลง"}, {"id": 9, "name": "ส่งมอบงาน", "lane": 2, "involves": [0, 1], "desc": "ผู้เชี่ยวชาญส่งมอบผลงานให้ผู้ว่าจ้างผ่าน MICC"}, {"id": 10, "name": "ประเมินผล", "lane": 1, "involves": [0, 2], "desc": "ประเมินความพึงพอใจ ผลสำเร็จ และบันทึกองค์ความรู้"}]},{"id":"s5","name":"ศูนย์บริการวิชาการและฝึกอบรม (CATS)","icon":"🎓","color":"#10b981","colorLight":"#d1fae5","tag":"CATS","desc":"บริหารจัดการหลักสูตรฝึกอบรม ตั้งแต่วิเคราะห์ความต้องการ ออกแบบหลักสูตร วางแผน ดำเนินการ และประเมินผล","chips":["CATS Team","ทีม SC","การเงิน"],"lanes":["CATS Team","ทีม SC / Admin","การเงิน","วิทยากร","ผู้เข้าอบรม / ลูกค้า"],"laneColors":["#d1fae5","#dbeafe","#fef9e7","#fce7f3","#f0fff4"],"steps":[{"id":1,"name":"วิเคราะห์ความต้องการ","lane":0,"involves":[4],"desc":"วิเคราะห์ Training Needs และ Learning Needs กำหนด Concept และ Learning Objectives (T-15 วัน)"},{"id":2,"name":"ออกแบบหลักสูตร","lane":0,"involves":[3],"desc":"ออกแบบโครงสร้างหลักสูตร (Module/Session) กำหนดรูปแบบ วิทยากร และจัดทำ Course Proposal (T-30 วัน)"},{"id":3,"name":"เสนออนุมัติ","lane":0,"involves":[],"desc":"จัดทำงบประมาณ Course Proposal และเสนออนุมัติการจัดทำหลักสูตรต่อผู้บริหาร"},{"id":4,"name":"ประชาสัมพันธ์ & รับสมัคร","lane":1,"involves":[0,4],"desc":"ดำเนินการประชาสัมพันธ์ (Marketing & PR) และเปิดรับสมัคร Registration (T-30 วันทำการ)"},{"id":5,"name":"เตรียมการ","lane":0,"involves":[1,3],"desc":"ประสานวิทยากร กำหนดวัน/เวลา/สถานที่ จัดเตรียมระบบ เอกสาร และอุปกรณ์"},{"id":6,"name":"ดำเนินการอบรม","lane":3,"involves":[0,4],"desc":"ลงทะเบียน ดำเนินการตาม Agenda ควบคุมคุณภาพ ดูแล Participant Experience และเก็บ Feedback"},{"id":7,"name":"ดำเนินการด้านการเงิน","lane":2,"involves":[4],"desc":"ดำเนินการ Invoice / Receipt / Payment และจัดการเอกสารการเงินที่เกี่ยวข้อง"},{"id":8,"name":"ประเมินผลและสรุป","lane":0,"involves":[],"desc":"รวบรวมแบบประเมิน วิเคราะห์ความพึงพอใจ สรุปผล และจัดทำรายงานเสนอผู้บริหาร (T-7 วัน)"}]}];
+
+function showLayer(id){
+  ['layer1','layer2','layer3'].forEach(function(l){
+    var el=document.getElementById(l);
+    el.style.display=(l===id)?'flex':'none';
+  });
+}
+function goHome(){ showLayer('layer1'); }
+function showRACards(){ showLayer('layer2'); }
+function goRACards(){ showRACards(); } // alias — keep both names for back-compat
+
+function showDetail(id){
+  var svc=SVC.find(function(s){return s.id===id;});
+  if(!svc) return;
+  var steps=_getSteps(id);
+  var lanes=_getLanes(id);
+  var svcW=Object.assign({},svc,{steps:steps,lanes:lanes});
+  document.getElementById('l3title').innerHTML=svc.icon+' '+svc.name;
+  document.getElementById('l3breadcrumb').innerHTML='หน้าหลัก &#x203A; งานบริการหลัก &#x203A; '+svc.name;
+  var editMode=(_editModeSvc===id);
+  var eBtnLabel=editMode?'&#x2714; เสร็จสิ้น':'&#x2699;&#xFE0F; แก้ไขขั้นตอน';
+  var eBtnClass=editMode?'btn-edit-done':'btn-edit-toggle';
+  var h='';
+  h+='<div class="sec-label"><span class="sec-badge">A</span> Service Journey Map<span class="sec-note">— ภาพรวมการไหลของงานตั้งแต่ต้นจนจบ</span>';
+  h+='<div style="margin-left:auto;display:flex;gap:7px">';
+  if(editMode) h+='<button onclick="openLaneModal(\''+id+'\')" class="btn-lane-mgr">🏷 จัดการ Lane</button>';
+  h+='<button onclick="toggleStepEdit(\''+id+'\')" class="'+eBtnClass+'">'+eBtnLabel+'</button>';
+  h+='</div></div>';
+  h+=buildJM(svcW,editMode);
+  h+='<div class="sec-label" style="margin-top:26px"><span class="sec-badge">B</span> Swimlane Diagram<span class="sec-note">— บทบาทผู้รับผิดชอบในแต่ละขั้นตอน</span></div>';
+  h+=buildSL(svcW);
+  document.getElementById('l3content').innerHTML=h;
+  showLayer('layer3');
+}
+
+function buildJM(svc,editMode){
+  var c=svc.color,cl=svc.colorLight;
+  var mapping=_getMapping();
+  var h='<div class="jm-wrap">';
+  if(editMode){
+    h+='<div style="display:flex;align-items:center;gap:7px;padding:8px 14px;margin-bottom:12px;background:#fef3c7;border-radius:10px;border:1px solid #fcd34d;font-size:12px;color:#92400e;font-weight:600">&#x26A0;&#xFE0F; โหมดแก้ไข — ปรับขั้นตอนได้เลย กด &quot;เสร็จสิ้น&quot; เมื่อเสร็จ</div>';
+  }
+  h+='<div class="jm-inner">';
+  svc.steps.forEach(function(step,i){
+    var primLanes=step.lanes||[step.lane||0];
+    var firstLaneLabel=svc.lanes[primLanes[0]]||'';
+    var laneTagHtml='<div class="jm-lane-tag" style="background:'+c+'">'+firstLaneLabel+(primLanes.length>1?' <span style="font-size:9px;opacity:.8">+' +(primLanes.length-1)+'</span>':'')+'</div>';
+    var nextStep=i<svc.steps.length-1?svc.steps[i+1]:null;
+    var nextPrimLanes=nextStep?(nextStep.lanes||[nextStep.lane||0]):primLanes;
+    // combined SOPs: global key + all per-lane keys
+    var linked={};
+    Object.assign(linked,mapping[svc.id+'_'+step.id]||{});
+    primLanes.forEach(function(li){Object.assign(linked,mapping[svc.id+'_'+step.id+'_L'+li]||{});});
+    var linkedIds=Object.keys(linked);
+    h+='<div class="jm-step"><div class="jm-num" style="background:'+c+'">'+step.id+'</div>';
+    // JM card = display only — ไม่ clickable สำหรับ SOP (เพิ่ม SOP ได้ใน Swimlane)
+    h+='<div class="jm-card" style="background:'+cl+';border-color:'+c+';cursor:default">';
+    h+='<div class="jm-card-name">'+step.name+'</div>';
+    h+=laneTagHtml;
+    h+='<div class="jm-desc">'+step.desc+'</div>';
+    if(!editMode){
+      if(linkedIds.length){
+        if(!_sopFlat.length) _loadSopData();
+        h+='<div class="jm-sop-badges">';
+        linkedIds.forEach(function(sid){
+          var bVal=linked[sid];
+          var bName=typeof bVal==='object'?bVal.n:bVal;
+          var _bSop=_sopFlat.find(function(x){return x.id===sid;})||{};
+          var bAppr=typeof bVal==='object'?bVal.a:(_bSop.approver||'');
+          var bColor=_bSop.color||c;
+          var bTitle=bAppr?'SOP : '+bName+' | ผู้รับผิดชอบ: '+bAppr:'SOP : '+bName;
+          h+='<span class="jm-sop-badge" style="background:'+bColor+';color:#fff;flex-direction:column;align-items:flex-start;padding:4px 8px;gap:2px;margin-bottom:2px" title="'+bTitle+'">';
+          h+='<span style="font-size:8.5px;font-weight:800;opacity:.75;letter-spacing:.04em">SOP</span>';
+          h+='<span style="font-size:10px;font-weight:700;line-height:1.35;word-break:break-word;white-space:normal">'+bName+'</span>';
+          if(bAppr){
+            h+='<span style="font-size:9px;font-weight:600;word-break:break-word;white-space:normal;display:flex;align-items:center;gap:3px;margin-top:1px">';
+            h+=_personAvatar(bAppr);
+            h+='<span style="opacity:.9">'+bAppr+'</span></span>';
+          }
+          h+='</span>';
+        });
+        h+='</div>';
+      } else {
+        h+='<div class="jm-add-hint" style="color:#cbd5e1;font-style:italic">ยังไม่มี SOP</div>';
+      }
+    } else {
+      // Edit mode controls
+      h+='<div class="jm-edit-controls">';
+      if(i>0) h+='<button class="jm-edit-btn jm-move" onclick="moveStep(\''+svc.id+'\','+step.id+',\'up\')">&#x2191;</button>';
+      if(i<svc.steps.length-1) h+='<button class="jm-edit-btn jm-move" onclick="moveStep(\''+svc.id+'\','+step.id+',\'down\')">&#x2193;</button>';
+      h+='<button class="jm-edit-btn jm-edit" onclick="openStepModal(\''+svc.id+'\','+step.id+')">&#x270F;</button>';
+      h+='<button class="jm-edit-btn jm-del" onclick="deleteStep(\''+svc.id+'\','+step.id+')">&#x1F5D1;</button>';
+      h+='</div>';
+    }
+    h+='</div></div>';
+    if(i<svc.steps.length-1){
+      var ac=nextPrimLanes[0]!==primLanes[0]?c:'#cbd5e1';
+      h+='<div class="jm-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+ac+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg></div>';
+    }
+  });
+  if(editMode){
+    h+='<div class="jm-arrow"></div><div class="jm-add-step-wrap">';
+    h+='<button class="jm-add-step-btn" onclick="openStepModal(\''+svc.id+'\',null)" title="เพิ่มขั้นตอนใหม่">+</button>';
+    h+='<div style="font-size:9.5px;color:#3b82f6;margin-top:4px;white-space:nowrap;font-weight:600">เพิ่มขั้นตอน</div></div>';
+  }
+  h+='</div></div>';
+  return h;
+}
+
+function buildSL(svc){
+  var c=svc.color;
+  var editMode=(_editModeSvc===svc.id); // inherit edit state from global
+  var mapping=_getMapping();
+  if(!_sopFlat.length) _loadSopData();
+  var h='<div class="sl-wrap"><table class="sl-table"><thead><tr class="sl-head">';
+  h+='<th>ผู้รับผิดชอบ</th>';
+  svc.steps.forEach(function(step,si){
+    h+='<th style="position:relative">';
+    h+='<div><span class="snum" style="background:'+c+'">'+step.id+'</span></div>';
+    h+=step.name;
+    // edit mode: ปุ่ม ✎ แก้ไข และ 🗑 ลบ ใน column header
+    if(editMode){
+      h+='<div style="display:flex;gap:4px;justify-content:center;margin-top:4px">';
+      h+='<button class="jm-edit-btn jm-edit" onclick="openStepModal(\''+svc.id+'\','+step.id+')" title="แก้ไข">&#x270F;</button>';
+      h+='<button class="jm-edit-btn jm-del" onclick="deleteStep(\''+svc.id+'\','+step.id+')" title="ลบ">&#x1F5D1;</button>';
+      if(si>0) h+='<button class="jm-edit-btn jm-move" onclick="moveStep(\''+svc.id+'\','+step.id+',\'up\')" title="เลื่อนซ้าย">&#x2190;</button>';
+      if(si<svc.steps.length-1) h+='<button class="jm-edit-btn jm-move" onclick="moveStep(\''+svc.id+'\','+step.id+',\'down\')" title="เลื่อนขวา">&#x2192;</button>';
+      h+='</div>';
+    }
+    h+='</th>';
+  });
+  // edit mode: ปุ่ม ➕ เพิ่มขั้นตอน เป็น column สุดท้าย
+  if(editMode){
+    h+='<th style="min-width:90px;vertical-align:middle">';
+    h+='<button onclick="openStepModal(\''+svc.id+'\',null)" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#f0f9ff;border:2px dashed #38bdf8;border-radius:10px;padding:8px 14px;cursor:pointer;font-family:\'Sarabun\',sans-serif;color:#0369a1;font-size:11px;font-weight:700;width:100%">';
+    h+='<span style="font-size:18px;line-height:1">&#xFF0B;</span>';
+    h+='เพิ่มขั้นตอน</button>';
+    h+='</th>';
+  }
+  h+='</tr></thead><tbody>';
+  svc.lanes.forEach(function(lane,li){
+    var lc=svc.laneColors?svc.laneColors[li]||'#f8fafc':'#f8fafc';
+    h+='<tr class="sl-row"><td class="lane-hd" style="background:'+lc+'">'+lane+'</td>';
+    svc.steps.forEach(function(step){
+      var primLanes=step.lanes||[step.lane||0];
+      var isPri=primLanes.indexOf(li)!==-1;
+      var isInv=step.involves&&step.involves.indexOf(li)!==-1;
+      // SOP: multi-primary → per-lane only (ไม่ merge global เพื่อไม่ให้ SOP ซ้ำทุก row)
+      //       single-primary → merge global + per-lane เพื่อ backward compat
+      var linked;
+      if(primLanes.length>1){
+        linked=mapping[svc.id+'_'+step.id+'_L'+li]||{};
+      } else {
+        linked=Object.assign({},mapping[svc.id+'_'+step.id]||{},mapping[svc.id+'_'+step.id+'_L'+li]||{});
+      }
+      var linkedIds=Object.keys(linked);
+      if(isPri){
+        h+='<td><div class="sl-cell" style="background:'+lc+';cursor:pointer;position:relative" title="คลิกเพื่อเลือก SOP" onclick="openSOPModal(\''+svc.id+'\','+step.id+','+li+')">';
+        // ปุ่มแก้ไข step (edit mode เท่านั้น) — stopPropagation เพื่อไม่ trigger SOP modal
+        if(editMode) h+='<button class="sl-cell-edit-btn" onclick="event.stopPropagation();openStepModal(\''+svc.id+'\','+step.id+')" title="แก้ไขขั้นตอน / เปลี่ยน Lane">&#x270F;</button>';
+        h+='<div class="sl-cell-name">'+step.name+'</div>';
+        // badge รับผิดชอบหลัก + X/N ถ้ามีหลาย primary lane
+        var primBadge='<span class="rpill rpill-p" style="background:'+c+'">รับผิดชอบหลัก';
+        if(primLanes.length>1) primBadge+=' <span style="opacity:.8;font-size:9px">('+(primLanes.indexOf(li)+1)+'/'+primLanes.length+')</span>';
+        primBadge+='</span>';
+        h+=primBadge;
+        h+='<div class="sl-cell-desc">'+step.desc+'</div>';
+        // SOP badges
+        if(linkedIds.length){
+          h+='<div class="sl-sop-badges">';
+          linkedIds.forEach(function(sid){
+            var bVal=linked[sid];
+            var bName=typeof bVal==='object'?bVal.n:bVal;
+            var bAppr=typeof bVal==='object'?bVal.a:'';
+            var _bSop=_sopFlat.find(function(x){return x.id===sid;})||{};
+            var bColor=_bSop.color||c;
+            h+='<div class="sl-sop-badge" style="background:'+bColor+'">';
+            h+='<span style="font-size:7.5px;font-weight:800;opacity:.7;letter-spacing:.04em">SOP</span>';
+            h+='<span style="font-size:9.5px;font-weight:700;line-height:1.3">'+bName+'</span>';
+            if(bAppr){
+              h+='<span style="font-size:8.5px;opacity:.85;display:flex;align-items:center;gap:2px;margin-top:1px">';
+              h+=_personAvatar(bAppr);
+              h+='<span>'+bAppr+'</span></span>';
+            }
+            h+='</div>';
+          });
+          h+='</div>';
+        }
+        h+='</div></td>';
+      } else if(isInv){
+        h+='<td><div class="sl-cell" style="background:#f8fafc">';
+        h+='<span class="rpill rpill-i">ประสานงาน</span>';
+        if(editMode) h+='<button class="sl-add-primary-btn" onclick="_addPrimaryLane(\''+svc.id+'\','+step.id+','+li+')" title="เพิ่ม Lane นี้เป็นผู้รับผิดชอบหลัก">&#x1F4CC; ตั้งเป็นหลัก</button>';
+        h+='</div></td>';
+      } else {
+        h+='<td><div class="sl-cell" style="background:#fafafa">';
+        if(editMode) h+='<button class="sl-add-primary-btn" onclick="_addPrimaryLane(\''+svc.id+'\','+step.id+','+li+')" title="เพิ่ม Lane นี้เป็นผู้รับผิดชอบหลัก">&#x1F4CC; ตั้งเป็นหลัก</button>';
+        h+='</div></td>';
+      }
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+/* ============================================================
+   SOP Modal Logic
+   ============================================================ */
+// _mCtx, _sopFlat, _staffPhotos declared at top of script
+
+function _loadSopData() {
+  var raw = localStorage.getItem('int_sop_v4');
+  if (!raw) return false;
+  var data;
+  try { data = JSON.parse(raw); } catch(e) { return false; }
+  _sopFlat = [];
+  Object.keys(data).forEach(function(dk) {
+    var dept = data[dk];
+    if (!dept.processes) return;
+    dept.processes.forEach(function(proc) {
+      if (!proc.sops) return;
+      proc.sops.forEach(function(sop) {
+        _sopFlat.push({
+          id: sop.id, name: sop.name,
+          dept: dept.abbr || dk, deptFull: dept.full || dk,
+          proc: proc.name, status: sop.status || '',
+          approver: sop.person || '',
+          color: dept.color || '#005992'
+        });
+      });
+    });
+  });
+  return true;
+}
+
+function _getMapping() {
+  var raw = localStorage.getItem('ra_journey_mapping');
+  return raw ? JSON.parse(raw) : {};
+}
+
+function _updateFtrCount() {
+  var n = Object.keys(_mCtx.selected).length;
+  document.getElementById('sopFtrCount').textContent = n > 0 ? 'เลือกแล้ว ' + n + ' รายการ' : '';
+}
+
+function openSOPModal(svcId, stepId, laneIdx) {
+  if (!_loadSopData()) {
+    alert('ยังไม่พบข้อมูล SOP\nกรุณาเปิด "กระบวนการหลัก SOP" อย่างน้อย 1 ครั้งก่อน');
+    return;
+  }
+  var steps = _getSteps(svcId);
+  var step = steps.find(function(s) { return s.id === stepId; });
+  if (!step) return;
+
+  _mCtx.svcId = svcId;
+  _mCtx.stepId = stepId;
+  _mCtx.primLanes = step.lanes || [step.lane || 0];
+  _mCtx.laneTemp = {};
+
+  var activeLane = (laneIdx !== null && laneIdx !== undefined) ? laneIdx : _mCtx.primLanes[0];
+  _mCtx.laneIdx = activeLane;
+
+  var mapping = _getMapping();
+  var key = svcId + '_' + stepId + '_L' + activeLane;
+  var globalKey = svcId + '_' + stepId;
+  // โหลด per-lane ก่อน ถ้าไม่มีให้ fallback global key (single-primary เท่านั้น) เพื่อให้เห็น SOP เดิม
+  if (mapping[key]) {
+    _mCtx.selected = JSON.parse(JSON.stringify(mapping[key]));
+  } else if (_mCtx.primLanes.length === 1 && mapping[globalKey]) {
+    _mCtx.selected = JSON.parse(JSON.stringify(mapping[globalKey]));
+  } else {
+    _mCtx.selected = {};
+  }
+
+  document.getElementById('sopModalTitle').textContent = 'เลือก SOP สำหรับขั้นตอนนี้';
+  document.getElementById('sopModalSub').textContent = 'Step ' + stepId + ': ' + step.name;
+  document.getElementById('sopSearchInput').value = '';
+  _renderSopLaneTabs(_getLanes(svcId), _mCtx.primLanes, activeLane);
+  _renderSopList('');
+  _updateFtrCount();
+  document.getElementById('sopModalBg').classList.add('open');
+}
+
+function _renderSopLaneTabs(lanes, primLanes, activeLaneIdx) {
+  var el = document.getElementById('sopLaneTabs');
+  if (!el) return;
+  if (primLanes.length <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  var h = '';
+  primLanes.forEach(function(li) {
+    var active = li === activeLaneIdx;
+    var s = active
+      ? 'background:#005992;color:#fff;border:none'
+      : 'background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0';
+    h += '<button onclick="_switchSopLaneTab('+li+')" style="'+s+';padding:5px 14px;border-radius:8px;font-family:\'Sarabun\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:.15s">'+(lanes[li]||'Lane '+li)+'</button>';
+  });
+  el.innerHTML = h;
+}
+
+function _switchSopLaneTab(laneIdx) {
+  if (!_mCtx.laneTemp) _mCtx.laneTemp = {};
+  _mCtx.laneTemp[_mCtx.laneIdx] = JSON.parse(JSON.stringify(_mCtx.selected));
+  _mCtx.laneIdx = laneIdx;
+  if (_mCtx.laneTemp[laneIdx] !== undefined) {
+    _mCtx.selected = JSON.parse(JSON.stringify(_mCtx.laneTemp[laneIdx]));
+  } else {
+    var m = _getMapping(); var k = _mCtx.svcId+'_'+_mCtx.stepId+'_L'+laneIdx;
+    _mCtx.selected = m[k] ? JSON.parse(JSON.stringify(m[k])) : {};
+  }
+  _renderSopLaneTabs(_getLanes(_mCtx.svcId), _mCtx.primLanes, laneIdx);
+  _renderSopList(document.getElementById('sopSearchInput').value);
+  _updateFtrCount();
+}
+
+function _renderSopList(search) {
+  var s = search.toLowerCase().trim();
+  var list = document.getElementById('sopModalList');
+  var filtered = s ? _sopFlat.filter(function(x) {
+    return x.name.toLowerCase().indexOf(s) !== -1 ||
+           x.dept.toLowerCase().indexOf(s) !== -1 ||
+           x.proc.toLowerCase().indexOf(s) !== -1;
+  }) : _sopFlat;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="sop-empty">ไม่พบ SOP ที่ตรงกับคำค้นหา</div>';
+    return;
+  }
+
+  // Group by dept + proc
+  var groups = {};
+  var order = [];
+  filtered.forEach(function(sop) {
+    var gk = sop.dept + ' — ' + sop.proc;
+    if (!groups[gk]) { groups[gk] = []; order.push(gk); }
+    groups[gk].push(sop);
+  });
+
+  var h = '';
+  order.forEach(function(gk) {
+    h += '<div class="sop-group-hdr">' + gk + '</div>';
+    groups[gk].forEach(function(sop) {
+      var chk = _mCtx.selected[sop.id] ? ' checked' : '';
+      var safeId = sop.id.replace(/"/g, '');
+      var safeName = sop.name.replace(/"/g, '&quot;');
+      var safeAppr = (sop.approver||'').replace(/"/g, '&quot;');
+      h += '<div class="sop-item">';
+      h += '<input type="checkbox"' + chk + ' data-sid="' + safeId + '" data-sname="' + safeName + '" data-sappr="' + safeAppr + '">';
+      h += '<div><div class="sop-item-name">' + sop.name + '</div>';
+      h += '<div class="sop-item-meta">' + sop.dept + (sop.status ? ' \xb7 ' + sop.status : '') + (sop.approver ? ' \xb7 ' + sop.approver : '') + '</div></div>';
+      h += '</div>';
+    });
+  });
+  list.innerHTML = h;
+}
+
+function filterSOPList() {
+  _renderSopList(document.getElementById('sopSearchInput').value);
+}
+
+// Event delegation — handles all checkbox changes inside the modal
+document.addEventListener('change', function(e) {
+  if (e.target.type === 'checkbox' && e.target.closest('#sopModalList')) {
+    var sid  = e.target.getAttribute('data-sid');
+    var name = e.target.getAttribute('data-sname');
+    var appr = e.target.getAttribute('data-sappr');
+    if (e.target.checked) _mCtx.selected[sid] = {n: name, a: appr};
+    else delete _mCtx.selected[sid];
+    _updateFtrCount();
+  }
+});
+
+// Close on backdrop click — defer until DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+  var bg = document.getElementById('sopModalBg');
+  if (bg) bg.addEventListener('click', function(e) {
+    if (e.target === this) closeSOPModal();
+  });
+});
+
+function closeSOPModal() {
+  document.getElementById('sopModalBg').classList.remove('open');
+}
+
+function saveSOPModal() {
+  var mapping = _getMapping();
+  // commit current tab to laneTemp
+  if (!_mCtx.laneTemp) _mCtx.laneTemp = {};
+  _mCtx.laneTemp[_mCtx.laneIdx] = JSON.parse(JSON.stringify(_mCtx.selected));
+  // write only lanes we visited (others unchanged in mapping)
+  Object.keys(_mCtx.laneTemp).forEach(function(li) {
+    var key = _mCtx.svcId + '_' + _mCtx.stepId + '_L' + li;
+    var sops = _mCtx.laneTemp[li];
+    if (Object.keys(sops).length === 0) delete mapping[key];
+    else mapping[key] = sops;
+  });
+  // ลบ legacy global key (svcId_stepId) ที่ค้างจากระบบเก่า — migrate ไป per-lane แล้ว
+  delete mapping[_mCtx.svcId + '_' + _mCtx.stepId];
+  localStorage.setItem('ra_journey_mapping', JSON.stringify(mapping));
+  closeSOPModal();
+  showDetail(_mCtx.svcId);
+}
+/* ============================================================ */
+
+/* ============================================================
+   Staff Photos — auto-fetch จากเว็บ iNT แล้ว cache ลง localStorage
+   ============================================================ */
+(function() {
+  var CACHE_KEY = 'int_staff_photos_v2';
+  var cached = localStorage.getItem(CACHE_KEY);
+  if (cached) {
+    try { _staffPhotos = JSON.parse(cached); } catch(e) {}
+    return;
+  }
+  // ลอง fetch หน้า director-and-staff เพื่อดึง img src + alt
+  fetch('https://int.mahidol.ac.th/director-and-staff/')
+    .then(function(r) { return r.text(); })
+    .then(function(raw) {
+      // parse img: src + alt จาก HTML ดิบ
+      var re = /<img[^>]+src="([^"]*wp-content\/uploads[^"]*)"[^>]*alt="([^"]+)"/g;
+      var m;
+      while ((m = re.exec(raw)) !== null) {
+        var url = m[1], alt = m[2].trim();
+        // ตัด position/dept ออก เหลือแค่ชื่อ
+        var name = alt
+          .replace(/\s+(หัวหน้า|รองหัวหน้า|เจ้าหน้าที่|นักวิชาการ|นักทรัพยากร|นักประชาสัมพันธ์|นักนิเทศ|นิติกร|ผู้อำนวยการ|รองผู้|ผู้ช่วย|สถาบัน|มหาวิทยาลัย).*/g, '')
+          .trim();
+        if (name.length >= 5) _staffPhotos[name] = url;
+      }
+      localStorage.setItem(CACHE_KEY, JSON.stringify(_staffPhotos));
+    })
+    .catch(function() {
+      // CORS block หรือ network error → ใช้ initial avatar แทน
+    });
+})();
+
+function _staffPhoto(name) {
+  if (!name) return '';
+  return _staffPhotos[name] || _staffPhotos[name.replace(/^(นาย|นาง|นางสาว)\s*/, '').trim()] || '';
+}
+
+function _personAvatar(name) {
+  var url = _staffPhoto(name);
+  var style = 'width:20px;height:20px;border-radius:50%;vertical-align:middle;flex-shrink:0;';
+  if (url) {
+    return '<img src="' + url + '" style="' + style + 'object-fit:cover;border:1.5px solid rgba(255,255,255,.5)" onerror="this.style.display=\'none\'">';
+  }
+  // Initial avatar
+  var clean = name.replace(/^(นาย|นาง|นางสาว)\s*/, '').trim();
+  var ch = clean.charAt(0) || '?';
+  return '<span style="' + style + 'display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.28);font-size:10px;font-weight:800;color:#fff">' + ch + '</span>';
+}
+/* ============================================================ */
+
+/* ============================================================
+   Step CRUD — localStorage key: int_custom_steps_v1
+   ============================================================ */
+function _getSteps(svcId){
+  var raw=localStorage.getItem(_STEPS_KEY);
+  var custom={};
+  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  var steps;
+  if(custom[svcId]) steps=custom[svcId];
+  else{var svc=SVC.find(function(s){return s.id===svcId;});steps=svc?JSON.parse(JSON.stringify(svc.steps)):[];}
+  // normalize: ensure step.lanes always exists (backward compat with old step.lane)
+  steps.forEach(function(step){
+    if(!step.lanes) step.lanes=[step.lane!==undefined?step.lane:0];
+  });
+  return steps;
+}
+function _saveSteps(svcId,steps){
+  var raw=localStorage.getItem(_STEPS_KEY);
+  var custom={};
+  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  custom[svcId]=steps;
+  localStorage.setItem(_STEPS_KEY,JSON.stringify(custom));
+}
+function _reindexAndSave(svcId,steps){
+  var mapping=_getMapping();
+  var remap={};
+  steps.forEach(function(s,i){remap[s.id]=i+1;});
+  var nm={};
+  Object.keys(mapping).forEach(function(k){
+    var parts=k.split('_');
+    if(parts[0]===svcId){
+      var oid=parseInt(parts[1]);
+      if(remap[oid]!==undefined){
+        // preserve per-lane suffix (_L0, _L1, ...) if present
+        var suffix=parts.length>2?'_'+parts.slice(2).join('_'):'';
+        nm[svcId+'_'+remap[oid]+suffix]=mapping[k];
+      }
+    } else { nm[k]=mapping[k]; }
+  });
+  localStorage.setItem('ra_journey_mapping',JSON.stringify(nm));
+  steps.forEach(function(s,i){s.id=i+1;});
+  _saveSteps(svcId,steps);
+}
+function toggleStepEdit(svcId){
+  _editModeSvc=(_editModeSvc===svcId)?'':svcId;
+  showDetail(svcId);
+}
+function moveStep(svcId,stepId,dir){
+  var steps=_getSteps(svcId);
+  var idx=steps.findIndex(function(s){return s.id===stepId;});
+  if(idx<0) return;
+  var swap=dir==='up'?idx-1:idx+1;
+  if(swap<0||swap>=steps.length) return;
+  var tmp=steps[idx];steps[idx]=steps[swap];steps[swap]=tmp;
+  _reindexAndSave(svcId,steps);
+  showDetail(svcId);
+}
+function deleteStep(svcId,stepId){
+  var steps=_getSteps(svcId);
+  var step=steps.find(function(s){return s.id===stepId;});
+  if(!step) return;
+  if(!confirm('ลบขั้นตอน "'+step.name+'" ?\nSOP ที่ผูกกับขั้นตอนนี้จะถูกลบออกด้วย')) return;
+  steps=steps.filter(function(s){return s.id!==stepId;});
+  _reindexAndSave(svcId,steps);
+  showDetail(svcId);
+}
+function _rebuildStepModalLanes(svcId,primaryChecked,involvesChecked){
+  var lanes=_getLanes(svcId);
+  var chk=function(arr,i){return arr&&arr.indexOf(i)!==-1?' checked':'';};
+  document.getElementById('stepPrimaryLanesGroup').innerHTML=
+    lanes.map(function(l,i){return '<label class="step-involves-item"><input type="checkbox" value="'+i+'"'+chk(primaryChecked,i)+'> '+l+'</label>';}).join('');
+  document.getElementById('stepInvolvesGroup').innerHTML=
+    lanes.map(function(l,i){return '<label class="step-involves-item"><input type="checkbox" value="'+i+'"'+chk(involvesChecked,i)+'> '+l+'</label>';}).join('');
+}
+// backward compat alias (used by addLaneFromStep indirectly)
+function _rebuildStepModalInvolves(svcId,checkedIndices){ _rebuildStepModalLanes(svcId,[],checkedIndices); }
+function openStepModal(svcId,stepId){
+  _stepCtx.svcId=svcId;_stepCtx.stepId=stepId;_stepCtx.mode=stepId===null?'add':'edit';
+  document.getElementById('stepModalTitle').textContent=stepId===null?'➕ เพิ่มขั้นตอนใหม่':'✏️ แก้ไขขั้นตอน';
+  if(stepId!==null){
+    var steps=_getSteps(svcId);
+    var step=steps.find(function(s){return s.id===stepId;});
+    if(step){
+      document.getElementById('stepNameInput').value=step.name;
+      document.getElementById('stepDescInput').value=step.desc||'';
+      var primLanes=step.lanes||[step.lane||0];
+      _rebuildStepModalLanes(svcId,primLanes,step.involves||[]);
+    }
+  } else {
+    document.getElementById('stepNameInput').value='';
+    document.getElementById('stepDescInput').value='';
+    _rebuildStepModalLanes(svcId,[0],[]);
+  }
+  document.getElementById('stepModalBg').classList.add('open');
+}
+function closeStepModal(){document.getElementById('stepModalBg').classList.remove('open');}
+function addLaneFromStep(){
+  var inp=document.getElementById('stepNewLaneInput');
+  var val=(inp.value||'').trim();
+  if(!val) return;
+  var svcId=_stepCtx.svcId;
+  var lanes=_getLanes(svcId);
+  if(lanes.indexOf(val)===-1){ lanes.push(val); _saveLanes(svcId,lanes); }
+  // collect currently checked before rebuild
+  var priChecked=[],invChecked=[];
+  document.getElementById('stepPrimaryLanesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){priChecked.push(parseInt(cb.value));});
+  document.getElementById('stepInvolvesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){invChecked.push(parseInt(cb.value));});
+  _rebuildStepModalLanes(svcId,priChecked,invChecked);
+  // auto-check new lane in involves
+  var newIdx=_getLanes(svcId).indexOf(val);
+  var invBoxes=document.getElementById('stepInvolvesGroup').querySelectorAll('input[type=checkbox]');
+  if(invBoxes[newIdx]) invBoxes[newIdx].checked=true;
+  inp.value='';
+}
+function saveStepModal(){
+  var name=document.getElementById('stepNameInput').value.trim();
+  if(!name){alert('กรุณาระบุชื่อขั้นตอน');return;}
+  var desc=document.getElementById('stepDescInput').value.trim();
+  var primLanes=[];
+  document.getElementById('stepPrimaryLanesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){primLanes.push(parseInt(cb.value));});
+  if(primLanes.length===0){alert('กรุณาเลือกผู้รับผิดชอบหลักอย่างน้อย 1 คน');return;}
+  var lane=primLanes[0]; // backward compat: keep first as step.lane
+  var involves=[];
+  document.getElementById('stepInvolvesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){involves.push(parseInt(cb.value));});
+  var svcId=_stepCtx.svcId;
+  var steps=_getSteps(svcId);
+  if(_stepCtx.mode==='add'){
+    var maxId=steps.reduce(function(m,s){return Math.max(m,s.id);},0);
+    steps.push({id:maxId+1,name:name,lane:lane,lanes:primLanes,involves:involves,desc:desc});
+    _saveSteps(svcId,steps);
+  } else {
+    var idx=steps.findIndex(function(s){return s.id===_stepCtx.stepId;});
+    if(idx>=0){steps[idx].name=name;steps[idx].desc=desc;steps[idx].lane=lane;steps[idx].lanes=primLanes;steps[idx].involves=involves;}
+    _saveSteps(svcId,steps);
+  }
+  closeStepModal();
+  showDetail(svcId);
+}
+/* ============================================================ */
+
+/* ============================================================
+   Lane Management — localStorage key: int_custom_lanes_v1
+   ============================================================ */
+function _getLanes(svcId){
+  var raw=localStorage.getItem(_LANES_KEY);
+  var custom={};
+  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  if(custom[svcId]) return custom[svcId];
+  var svc=SVC.find(function(s){return s.id===svcId;});
+  return svc?svc.lanes.slice():[];
+}
+function _saveLanes(svcId,lanes){
+  var raw=localStorage.getItem(_LANES_KEY);
+  var custom={};
+  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  custom[svcId]=lanes;
+  localStorage.setItem(_LANES_KEY,JSON.stringify(custom));
+}
+// เพิ่ม lane เป็นผู้รับผิดชอบหลักของ step (จาก Swimlane edit mode)
+function _addPrimaryLane(svcId,stepId,laneIdx){
+  var steps=_getSteps(svcId);
+  var step=steps.find(function(s){return s.id===stepId;});
+  if(!step) return;
+  if(!step.lanes) step.lanes=[step.lane||0];
+  if(step.lanes.indexOf(laneIdx)===-1){
+    step.lanes.push(laneIdx);
+    step.lane=step.lanes[0]; // backward compat
+  }
+  _saveSteps(svcId,steps);
+  showDetail(svcId);
+}
+function _remapAndSaveLanes(svcId,newLanes){
+  var oldLanes=_getLanes(svcId);
+  var steps=_getSteps(svcId);
+  steps.forEach(function(step){
+    // remap primary lanes array
+    step.lanes=(step.lanes||[step.lane||0]).map(function(li){
+      return newLanes.indexOf(oldLanes[li]);
+    }).filter(function(i){return i>=0;});
+    if(step.lanes.length===0) step.lanes=[0];
+    step.lane=step.lanes[0]; // backward compat
+    // remap involves
+    step.involves=(step.involves||[]).map(function(i){
+      return newLanes.indexOf(oldLanes[i]);
+    }).filter(function(i){return i>=0;});
+  });
+  _saveSteps(svcId,steps);
+  // remap per-lane SOP keys
+  var mapping=_getMapping();
+  var nm={};
+  Object.keys(mapping).forEach(function(k){
+    var parts=k.split('_');
+    if(parts[0]===svcId&&parts[2]&&parts[2].charAt(0)==='L'){
+      var oldIdx=parseInt(parts[2].substring(1));
+      if(!isNaN(oldIdx)&&oldIdx<oldLanes.length){
+        var newIdx=newLanes.indexOf(oldLanes[oldIdx]);
+        if(newIdx>=0) nm[svcId+'_'+parts[1]+'_L'+newIdx]=mapping[k];
+        // if lane deleted, drop the key
+      } else { nm[k]=mapping[k]; }
+    } else { nm[k]=mapping[k]; }
+  });
+  localStorage.setItem('ra_journey_mapping',JSON.stringify(nm));
+  _saveLanes(svcId,newLanes);
+}
+function openLaneModal(svcId){
+  _laneModalSvcId=svcId;
+  _laneModalLanesTmp=_getLanes(svcId).slice();
+  _renderLaneModal();
+  document.getElementById('laneModalBg').classList.add('open');
+}
+function closeLaneModal(){document.getElementById('laneModalBg').classList.remove('open');}
+function _renderLaneModal(){
+  var h='';
+  _laneModalLanesTmp.forEach(function(name,i){
+    h+='<div class="lane-modal-row">';
+    h+='<span class="lane-modal-num">'+(i+1)+'</span>';
+    h+='<span class="lane-modal-name">'+name+'</span>';
+    h+='<div class="lane-modal-btns">';
+    if(i>0) h+='<button class="jm-edit-btn jm-move" onclick="_moveLaneM('+i+',\'up\')">&#x2191;</button>';
+    if(i<_laneModalLanesTmp.length-1) h+='<button class="jm-edit-btn jm-move" onclick="_moveLaneM('+i+',\'down\')">&#x2193;</button>';
+    h+='<button class="jm-edit-btn jm-edit" onclick="_editLaneM('+i+')" title="แก้ไขชื่อ">&#x270F;</button>';
+    h+='<button class="jm-edit-btn jm-del" onclick="_deleteLaneM('+i+')">&#x1F5D1;</button>';
+    h+='</div></div>';
+  });
+  document.getElementById('laneModalList').innerHTML=h;
+}
+
+function _editLaneM(idx){
+  var rows=document.getElementById('laneModalList').querySelectorAll('.lane-modal-row');
+  var row=rows[idx];
+  if(!row) return;
+  var nameSpan=row.querySelector('.lane-modal-name');
+  var inp=document.createElement('input');
+  inp.className='lane-modal-input';
+  inp.style.flex='1';inp.style.minWidth='0';
+  inp.value=_laneModalLanesTmp[idx]||'';
+  inp.onblur=function(){_saveLaneName(idx,inp.value);};
+  inp.onkeydown=function(e){
+    if(e.key==='Enter'){e.preventDefault();inp.blur();}
+    if(e.key==='Escape'){_renderLaneModal();}
+  };
+  nameSpan.parentNode.replaceChild(inp,nameSpan);
+  inp.focus();inp.select();
+}
+
+function _saveLaneName(idx,val){
+  val=(val||'').trim();
+  if(val) _laneModalLanesTmp[idx]=val;
+  _renderLaneModal();
+}
+function _moveLaneM(idx,dir){
+  var swap=dir==='up'?idx-1:idx+1;
+  if(swap<0||swap>=_laneModalLanesTmp.length) return;
+  var tmp=_laneModalLanesTmp[idx];_laneModalLanesTmp[idx]=_laneModalLanesTmp[swap];_laneModalLanesTmp[swap]=tmp;
+  _renderLaneModal();
+}
+function _deleteLaneM(idx){
+  if(!confirm('ลบ "'+_laneModalLanesTmp[idx]+'" ?\nขั้นตอนที่ใช้ Lane นี้เป็นหลักจะถูกย้ายไป Lane แรกโดยอัตโนมัติ')) return;
+  _laneModalLanesTmp.splice(idx,1);
+  _renderLaneModal();
+}
+function _addLaneFromModal(){
+  var inp=document.getElementById('laneModalInput');
+  var val=(inp.value||'').trim();
+  if(!val) return;
+  if(_laneModalLanesTmp.indexOf(val)===-1) _laneModalLanesTmp.push(val);
+  inp.value='';
+  _renderLaneModal();
+}
+function saveLaneModal(){
+  if(_laneModalLanesTmp.length===0){alert('ต้องมีอย่างน้อย 1 Lane');return;}
+  _remapAndSaveLanes(_laneModalSvcId,_laneModalLanesTmp);
+  closeLaneModal();
+  showDetail(_laneModalSvcId);
+}
+/* ============================================================ */
+
+</script>
+
+<!-- SOP Selector Modal -->
+<div class="sop-modal-bg" id="sopModalBg" onclick="if(event.target===this)closeSOPModal()">
+  <div class="sop-modal">
+    <div class="sop-modal-hdr">
+      <div>
+        <div class="sop-modal-title" id="sopModalTitle">เลือก SOP</div>
+        <div class="sop-modal-sub" id="sopModalSub"></div>
+      </div>
+      <button class="sop-modal-close" onclick="closeSOPModal()">&#x2715;</button>
+    </div>
+    <div id="sopLaneTabs" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 16px 4px;border-bottom:1px solid #e2e8f0"></div>
+    <div class="sop-modal-search">
+      <input class="sop-search-input" id="sopSearchInput" type="text" placeholder="&#x1F50D; ค้นหาชื่อ SOP..." oninput="filterSOPList()">
+    </div>
+    <div class="sop-modal-list" id="sopModalList"></div>
+    <div class="sop-modal-ftr">
+      <span id="sopFtrCount" class="sop-ftr-count"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn-modal-cancel" onclick="closeSOPModal()">ยกเลิก</button>
+        <button class="btn-modal-save" onclick="saveSOPModal()">&#x2713; บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lane Manager Modal -->
+<div class="step-modal-bg" id="laneModalBg" onclick="if(event.target===this)closeLaneModal()">
+  <div class="step-modal" style="width:460px">
+    <div class="step-modal-hdr">
+      <div class="step-modal-title">🏷 จัดการผู้รับผิดชอบ (Lane)</div>
+      <button class="sop-modal-close" onclick="closeLaneModal()">&#x2715;</button>
+    </div>
+    <div class="step-modal-body">
+      <div style="font-size:12px;color:#64748b;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0">
+        เพิ่ม ลบ หรือจัดลำดับผู้รับผิดชอบ — การเปลี่ยนแปลงจะ update Swimlane Diagram อัตโนมัติ
+      </div>
+      <div id="laneModalList"></div>
+      <div class="lane-modal-add">
+        <input class="lane-modal-input" id="laneModalInput" type="text" placeholder="ชื่อผู้รับผิดชอบ / หน่วยงาน..." onkeydown="if(event.key==='Enter'){event.preventDefault();_addLaneFromModal();}">
+        <button class="lane-modal-addbtn" onclick="_addLaneFromModal()">+ เพิ่ม</button>
+      </div>
+    </div>
+    <div class="step-modal-ftr">
+      <button class="btn-modal-cancel" onclick="closeLaneModal()">ยกเลิก</button>
+      <button class="btn-modal-save" onclick="saveLaneModal()">&#x2713; บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Step Editor Modal -->
+<div class="step-modal-bg" id="stepModalBg" onclick="if(event.target===this)closeStepModal()">
+  <div class="step-modal">
+    <div class="step-modal-hdr">
+      <div class="step-modal-title" id="stepModalTitle">➕ เพิ่มขั้นตอนใหม่</div>
+      <button class="sop-modal-close" onclick="closeStepModal()">&#x2715;</button>
+    </div>
+    <div class="step-modal-body">
+      <div>
+        <label class="step-form-label">ชื่อขั้นตอน <span style="color:#e11d48">*</span></label>
+        <input class="step-form-input" id="stepNameInput" type="text" placeholder="เช่น รับเรื่องคำขอ, ตรวจสอบเอกสาร...">
+      </div>
+      <div>
+        <label class="step-form-label">คำอธิบายขั้นตอน</label>
+        <textarea class="step-form-textarea" id="stepDescInput" placeholder="รายละเอียดขั้นตอนนี้..."></textarea>
+      </div>
+      <div>
+        <label class="step-form-label">ผู้รับผิดชอบหลัก <span style="font-weight:400;color:#94a3b8">(เลือกได้หลายคน)</span></label>
+        <div class="step-involves-grid" id="stepPrimaryLanesGroup"></div>
+      </div>
+      <div>
+        <label class="step-form-label">ผู้เกี่ยวข้อง <span style="font-weight:400;color:#94a3b8">(เลือกได้หลายคน)</span></label>
+        <div class="step-involves-grid" id="stepInvolvesGroup"></div>
+        <div class="step-new-lane-row">
+          <input class="step-new-lane-input" id="stepNewLaneInput" type="text" placeholder="เพิ่มผู้รับผิดชอบใหม่..." onkeydown="if(event.key==='Enter'){event.preventDefault();addLaneFromStep();}">
+          <button class="step-new-lane-btn" onclick="addLaneFromStep()">+ เพิ่ม</button>
+        </div>
+      </div>
+    </div>
+    <div class="step-modal-ftr">
+      <button class="btn-modal-cancel" onclick="closeStepModal()">ยกเลิก</button>
+      <button class="btn-modal-save" onclick="saveStepModal()">&#x2713; บันทึก</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
