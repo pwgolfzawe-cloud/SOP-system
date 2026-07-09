@@ -494,6 +494,8 @@ function showDetail(id){
   // ด้านล่างจะรีเซ็ตสกรอลกลับบนสุดถ้าไม่กู้คืนเอง (ทำให้ต้องเลื่อนหาใหม่ทุกครั้งที่บันทึก SOP)
   var _scrollEl=document.querySelector('.detail-body');
   var _savedScrollTop=_scrollEl?_scrollEl.scrollTop:0;
+  var _slWrapOld=document.querySelector('.sl-wrap');
+  var _savedSlScrollLeft=_slWrapOld?_slWrapOld.scrollLeft:0;
   var steps=_getSteps(id);
   var lanes=_getLanes(id);
   var svcW=Object.assign({},svc,{steps:steps,lanes:lanes});
@@ -529,6 +531,10 @@ function showDetail(id){
   // กู้คืนตำแหน่งสกรอลเดิม (รอ 1 เฟรมให้ browser layout เสร็จก่อน เพื่อให้ scrollHeight ใหม่พร้อมใช้)
   if(_scrollEl){
     requestAnimationFrame(function(){ _scrollEl.scrollTop=_savedScrollTop; });
+  }
+  var _slWrapNew=document.querySelector('.sl-wrap');
+  if(_slWrapNew && _savedSlScrollLeft){
+    requestAnimationFrame(function(){ _slWrapNew.scrollLeft=_savedSlScrollLeft; });
   }
 }
 
