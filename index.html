@@ -319,6 +319,18 @@ var _LANES_KEY = 'int_custom_lanes_v1';
 var _laneModalSvcId = '';
 var _laneModalLanesTmp = [];
 
+
+function _showLoadError(msg){
+  var id='_loadErrBanner';
+  var el=document.getElementById(id);
+  if(!el){
+    el=document.createElement('div');
+    el.id=id;
+    el.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:10px 16px;text-align:center;font-family:"Sarabun",sans-serif;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+    document.body.appendChild(el);
+  }
+  el.textContent='⚠️ '+msg+' — กด Ctrl+Shift+R เพื่อโหลดใหม่ก่อนใช้งานหรือนำเสนอ';
+}
 /* ---- Supabase Key-Value cache (แทน localStorage: int_custom_steps_v1, int_custom_lanes_v1, ra_journey_mapping) ---- */
 var _kvCache = {};
 async function _loadKV(){
@@ -328,6 +340,7 @@ async function _loadKV(){
     (data||[]).forEach(function(row){ _kvCache[row.key] = row.value; });
   }catch(err){
     console.warn('โหลดข้อมูล app_kv จาก Supabase ไม่สำเร็จ (ใช้ localStorage สำรองแทนชั่วคราว):', err);
+    _showLoadError('โหลดข้อมูล Journey Map/Lane ไม่สำเร็จ อาจเห็นข้อมูลไม่ตรงกับที่บันทึกไว้จริง');
   }
 }
 var _kvReadyPromise = _loadKV(); // เริ่มดึงข้อมูลทันทีที่ script โหลด ไม่ต้องรอ DOMContentLoaded
@@ -339,7 +352,7 @@ function _kvGet(key){
 }
 function _kvSet(key, value){
   _kvCache[key] = value;
-  _SB.from('app_kv').upsert({key:key, value:value}, {onConflict:'key'}).then(function(r){
+  return _SB.from('app_kv').upsert({key:key, value:value}, {onConflict:'key'}).then(function(r){
     if(r.error) console.error('บันทึก '+key+' ขึ้น Supabase ไม่สำเร็จ:', r.error);
   });
 }
@@ -755,6 +768,7 @@ async function _loadSopData() {
     return true;
   } catch(err) {
     console.warn('โหลดข้อมูล SOP จาก Supabase ไม่สำเร็จ:', err);
+    _showLoadError('โหลดข้อมูล SOP ไม่สำเร็จ อาจเห็นสี/ชื่อ SOP ไม่ตรงกับข้อมูลจริง');
     return false;
   }
 }
@@ -906,7 +920,7 @@ function closeSOPModal() {
   document.getElementById('sopModalBg').classList.remove('open');
 }
 
-function saveSOPModal() {
+async function saveSOPModal() {
   var mapping = _getMapping();
   // commit current tab to laneTemp
   if (!_mCtx.laneTemp) _mCtx.laneTemp = {};
@@ -920,7 +934,9 @@ function saveSOPModal() {
   });
   // ลบ legacy global key (svcId_stepId) ที่ค้างจากระบบเก่า — migrate ไป per-lane แล้ว
   delete mapping[_mCtx.svcId + '_' + _mCtx.stepId];
-  _kvSet('ra_journey_mapping', mapping);
+  var _btn=document.getElementById('sopSaveBtn');if(_btn){_btn.disabled=true;_btn.textContent='กำลังบันทึก…';}
+  await _kvSet('ra_journey_mapping', mapping);
+  if(_btn){_btn.disabled=false;_btn.textContent='✓ บันทึก';}
   closeSOPModal();
   showDetail(_mCtx.svcId);
 }
@@ -990,12 +1006,12 @@ function _getSteps(svcId){
   });
   return steps;
 }
-function _saveSteps(svcId,steps){
+async function _saveSteps(svcId,steps){
   var custom=_kvGet(_STEPS_KEY)||{};
   custom[svcId]=steps;
-  _kvSet(_STEPS_KEY,custom);
+  return _kvSet(_STEPS_KEY,custom);
 }
-function _reindexAndSave(svcId,steps){
+async function _reindexAndSave(svcId,steps){
   var mapping=_getMapping();
   var remap={};
   steps.forEach(function(s,i){remap[s.id]=i+1;});
@@ -1011,31 +1027,31 @@ function _reindexAndSave(svcId,steps){
       }
     } else { nm[k]=mapping[k]; }
   });
-  _kvSet('ra_journey_mapping',nm);
+  await _kvSet('ra_journey_mapping',nm);
   steps.forEach(function(s,i){s.id=i+1;});
-  _saveSteps(svcId,steps);
+  await _saveSteps(svcId,steps);
 }
 function toggleStepEdit(svcId){
   _editModeSvc=(_editModeSvc===svcId)?'':svcId;
   showDetail(svcId);
 }
-function moveStep(svcId,stepId,dir){
+async function moveStep(svcId,stepId,dir){
   var steps=_getSteps(svcId);
   var idx=steps.findIndex(function(s){return s.id===stepId;});
   if(idx<0) return;
   var swap=dir==='up'?idx-1:idx+1;
   if(swap<0||swap>=steps.length) return;
   var tmp=steps[idx];steps[idx]=steps[swap];steps[swap]=tmp;
-  _reindexAndSave(svcId,steps);
+  await _reindexAndSave(svcId,steps);
   showDetail(svcId);
 }
-function deleteStep(svcId,stepId){
+async function deleteStep(svcId,stepId){
   var steps=_getSteps(svcId);
   var step=steps.find(function(s){return s.id===stepId;});
   if(!step) return;
   if(!confirm('ลบขั้นตอน "'+step.name+'" ?\nSOP ที่ผูกกับขั้นตอนนี้จะถูกลบออกด้วย')) return;
   steps=steps.filter(function(s){return s.id!==stepId;});
-  _reindexAndSave(svcId,steps);
+  await _reindexAndSave(svcId,steps);
   showDetail(svcId);
 }
 function _rebuildStepModalLanes(svcId,primaryChecked,involvesChecked){
@@ -1068,13 +1084,13 @@ function openStepModal(svcId,stepId){
   document.getElementById('stepModalBg').classList.add('open');
 }
 function closeStepModal(){document.getElementById('stepModalBg').classList.remove('open');}
-function addLaneFromStep(){
+async function addLaneFromStep(){
   var inp=document.getElementById('stepNewLaneInput');
   var val=(inp.value||'').trim();
   if(!val) return;
   var svcId=_stepCtx.svcId;
   var lanes=_getLanes(svcId);
-  if(lanes.indexOf(val)===-1){ lanes.push(val); _saveLanes(svcId,lanes); }
+  if(lanes.indexOf(val)===-1){ lanes.push(val); await _saveLanes(svcId,lanes); }
   // collect currently checked before rebuild
   var priChecked=[],invChecked=[];
   document.getElementById('stepLanesCheckboxes').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){priChecked.push(parseInt(cb.value));});
@@ -1086,7 +1102,7 @@ function addLaneFromStep(){
   if(invBoxes[newIdx]) invBoxes[newIdx].checked=true;
   inp.value='';
 }
-function saveStepModal(){
+async function saveStepModal(){
   var name=document.getElementById('stepNameInput').value.trim();
   if(!name){alert('กรุณาระบุชื่อขั้นตอน');return;}
   var desc=document.getElementById('stepDescInput').value.trim();
@@ -1098,15 +1114,17 @@ function saveStepModal(){
   document.getElementById('stepInvCheckboxes').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){involves.push(parseInt(cb.value));});
   var svcId=_stepCtx.svcId;
   var steps=_getSteps(svcId);
+  var _btn=document.getElementById('stepSaveBtn');if(_btn){_btn.disabled=true;_btn.textContent='กำลังบันทึก…';}
   if(_stepCtx.mode==='add'){
     var maxId=steps.reduce(function(m,s){return Math.max(m,s.id);},0);
     steps.push({id:maxId+1,name:name,lane:lane,lanes:primLanes,involves:involves,desc:desc});
-    _saveSteps(svcId,steps);
+    await _saveSteps(svcId,steps);
   } else {
     var idx=steps.findIndex(function(s){return s.id===_stepCtx.stepId;});
     if(idx>=0){steps[idx].name=name;steps[idx].desc=desc;steps[idx].lane=lane;steps[idx].lanes=primLanes;steps[idx].involves=involves;}
-    _saveSteps(svcId,steps);
+    await _saveSteps(svcId,steps);
   }
+  if(_btn){_btn.disabled=false;_btn.textContent='✓ บันทึก';}
   closeStepModal();
   showDetail(svcId);
 }
@@ -1121,13 +1139,13 @@ function _getLanes(svcId){
   var svc=SVC.find(function(s){return s.id===svcId;});
   return svc?svc.lanes.slice():[];
 }
-function _saveLanes(svcId,lanes){
+async function _saveLanes(svcId,lanes){
   var custom=_kvGet(_LANES_KEY)||{};
   custom[svcId]=lanes;
-  _kvSet(_LANES_KEY,custom);
+  return _kvSet(_LANES_KEY,custom);
 }
 // เพิ่ม/ลบ lane เป็นผู้รับผิดชอบหลักของ step (จาก Swimlane edit mode)
-function _addPrimaryLane(svcId,stepId,laneIdx){
+async function _addPrimaryLane(svcId,stepId,laneIdx){
   var steps=_getSteps(svcId);
   var step=steps.find(function(s){return s.id===stepId;});
   if(!step) return;
@@ -1136,10 +1154,10 @@ function _addPrimaryLane(svcId,stepId,laneIdx){
     step.lanes.push(laneIdx);
     step.lane=step.lanes[0]; // backward compat
   }
-  _saveSteps(svcId,steps);
+  await _saveSteps(svcId,steps);
   showDetail(svcId);
 }
-function _removePrimaryLane(svcId,stepId,laneIdx){
+async function _removePrimaryLane(svcId,stepId,laneIdx){
   var steps=_getSteps(svcId);
   var step=steps.find(function(s){return s.id===stepId;});
   if(!step) return;
@@ -1147,10 +1165,10 @@ function _removePrimaryLane(svcId,stepId,laneIdx){
   if(step.lanes.length<=1){alert('ขั้นตอนต้องมีผู้รับผิดชอบหลักอย่างน้อย 1 Lane');return;}
   step.lanes=step.lanes.filter(function(i){return i!==laneIdx;});
   step.lane=step.lanes[0];
-  _saveSteps(svcId,steps);
+  await _saveSteps(svcId,steps);
   showDetail(svcId);
 }
-function _remapAndSaveLanes(svcId,newLanes){
+async function _remapAndSaveLanes(svcId,newLanes){
   var oldLanes=_getLanes(svcId);
   var steps=_getSteps(svcId);
   steps.forEach(function(step){
@@ -1165,7 +1183,7 @@ function _remapAndSaveLanes(svcId,newLanes){
       return newLanes.indexOf(oldLanes[i]);
     }).filter(function(i){return i>=0;});
   });
-  _saveSteps(svcId,steps);
+  await _saveSteps(svcId,steps);
   // remap per-lane SOP keys
   var mapping=_getMapping();
   var nm={};
@@ -1180,8 +1198,8 @@ function _remapAndSaveLanes(svcId,newLanes){
       } else { nm[k]=mapping[k]; }
     } else { nm[k]=mapping[k]; }
   });
-  _kvSet('ra_journey_mapping',nm);
-  _saveLanes(svcId,newLanes);
+  await _kvSet('ra_journey_mapping',nm);
+  await _saveLanes(svcId,newLanes);
 }
 function openLaneModal(svcId){
   _laneModalSvcId=svcId;
@@ -1248,9 +1266,11 @@ function _addLaneFromModal(){
   inp.value='';
   _renderLaneModal();
 }
-function saveLaneModal(){
+async function saveLaneModal(){
   if(_laneModalLanesTmp.length===0){alert('ต้องมีอย่างน้อย 1 Lane');return;}
-  _remapAndSaveLanes(_laneModalSvcId,_laneModalLanesTmp);
+  var _btn=document.getElementById('laneSaveBtn');if(_btn){_btn.disabled=true;_btn.textContent='กำลังบันทึก…';}
+  await _remapAndSaveLanes(_laneModalSvcId,_laneModalLanesTmp);
+  if(_btn){_btn.disabled=false;_btn.textContent='✓ บันทึก';}
   closeLaneModal();
   showDetail(_laneModalSvcId);
 }
@@ -1277,7 +1297,7 @@ function saveLaneModal(){
       <span id="sopFtrCount" class="sop-ftr-count"></span>
       <div style="display:flex;gap:8px">
         <button class="btn-modal-cancel" onclick="closeSOPModal()">ยกเลิก</button>
-        <button class="btn-modal-save" onclick="saveSOPModal()">&#x2713; บันทึก</button>
+        <button class="btn-modal-save" id="sopSaveBtn" onclick="saveSOPModal()">&#x2713; บันทึก</button>
       </div>
     </div>
   </div>
@@ -1302,7 +1322,7 @@ function saveLaneModal(){
     </div>
     <div class="step-modal-ftr">
       <button class="btn-modal-cancel" onclick="closeLaneModal()">ยกเลิก</button>
-      <button class="btn-modal-save" onclick="saveLaneModal()">&#x2713; บันทึก</button>
+      <button class="btn-modal-save" id="laneSaveBtn" onclick="saveLaneModal()">&#x2713; บันทึก</button>
     </div>
   </div>
 </div>
@@ -1334,7 +1354,7 @@ function saveLaneModal(){
     </div>
     <div class="step-modal-ftr">
       <button class="btn-modal-cancel" onclick="closeStepModal()">ยกเลิก</button>
-      <button class="btn-modal-save" onclick="saveStepModal()">&#x2713; บันทึก</button>
+      <button class="btn-modal-save" id="stepSaveBtn" onclick="saveStepModal()">&#x2713; บันทึก</button>
     </div>
   </div>
 </div>

@@ -210,6 +210,7 @@ async function loadS(){
   }catch(err){
     console.warn('โหลดจาก Supabase ไม่สำเร็จ ใช้ข้อมูลตั้งต้น (offline fallback):',err);
     S=JSON.parse(JSON.stringify(RD));
+    var _eb=document.createElement('div');_eb.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:10px 16px;text-align:center;font-family:"Sarabun",sans-serif;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.2)';_eb.textContent='⚠️ โหลดข้อมูล SOP จาก Supabase ไม่สำเร็จ — กำลังแสดงข้อมูลตั้งต้น ไม่ใช่ข้อมูลจริง กด Ctrl+Shift+R ก่อนใช้งานหรือนำเสนอ';document.body.appendChild(_eb);
   }
   ['int_sop_v1','int_sop_v2','int_sop_v3','int_sop_v4'].forEach(function(k){localStorage.removeItem(k);});
 }
@@ -248,7 +249,7 @@ async function pushS(){
 }
 async function saveAll(){await pushS();show('saveStatus',2000);}
 async function autoSave(){await pushS();}
-function resetData(){if(!confirm('รีเซ็ตข้อมูล? การกระทำนี้จะเขียนทับข้อมูลปัจจุบันบน Supabase ด้วยชุดข้อมูลตั้งต้น'))return;S=JSON.parse(JSON.stringify(RD));pushS();render();}
+async function resetData(){if(!confirm('รีเซ็ตข้อมูล? การกระทำนี้จะเขียนทับข้อมูลปัจจุบันบน Supabase ด้วยชุดข้อมูลตั้งต้น'))return;S=JSON.parse(JSON.stringify(RD));await pushS();render();}
 function exportJSON(){var b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='int_sop_data.json';a.click();}
 function exportXLSX(){
   var wb=XLSX.utils.book_new();
