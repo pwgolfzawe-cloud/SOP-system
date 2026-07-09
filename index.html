@@ -500,6 +500,10 @@ async function showDetail(id){
   // รอให้ _loadKV() (custom steps/lanes/journey mapping จาก Supabase) โหลดเสร็จก่อนเสมอ
   // กันปัญหาเข้าเว็บเครื่อง/เน็ตที่โหลดช้ากว่า แล้วเห็นข้อมูล default แทนข้อมูลจริงที่เคยแก้ไว้
   await _kvReadyPromise;
+  // โหลดข้อมูล SOP (สำหรับสีป้าย/ชื่อผู้รับผิดชอบใน Journey Map + Swimlane) ให้เสร็จก่อน
+  // render เสมอ — ไม่งั้นรอบแรกที่เข้าเว็บจะยังไม่มี _sopFlat ป้าย SOP เลยตกไปใช้สีบริการ
+  // แทนสีฝ่ายเจ้าของ SOP จริง (เห็นเป็นสีเดียวกันหมดจนกว่าจะโหลดเสร็จรอบถัดไป)
+  if(!_sopFlat.length) await _loadSopData();
   // จำตำแหน่งสกรอลปัจจุบันของ .detail-body ไว้ก่อน — เพราะ innerHTML re-render
   // ด้านล่างจะรีเซ็ตสกรอลกลับบนสุดถ้าไม่กู้คืนเอง (ทำให้ต้องเลื่อนหาใหม่ทุกครั้งที่บันทึก SOP)
   var _scrollEl=document.querySelector('.detail-body');
