@@ -490,6 +490,10 @@ function esc(s){var d=document.createElement('div');d.textContent=s;return d.inn
 function showDetail(id){
   var svc=SVC.find(function(s){return s.id===id;});
   if(!svc) return;
+  // จำตำแหน่งสกรอลปัจจุบันของ .detail-body ไว้ก่อน — เพราะ innerHTML re-render
+  // ด้านล่างจะรีเซ็ตสกรอลกลับบนสุดถ้าไม่กู้คืนเอง (ทำให้ต้องเลื่อนหาใหม่ทุกครั้งที่บันทึก SOP)
+  var _scrollEl=document.querySelector('.detail-body');
+  var _savedScrollTop=_scrollEl?_scrollEl.scrollTop:0;
   var steps=_getSteps(id);
   var lanes=_getLanes(id);
   var svcW=Object.assign({},svc,{steps:steps,lanes:lanes});
@@ -522,6 +526,10 @@ function showDetail(id){
   h+=buildSL(svcW);
   document.getElementById('l3content').innerHTML=h;
   showLayer('layer3');
+  // กู้คืนตำแหน่งสกรอลเดิม (รอ 1 เฟรมให้ browser layout เสร็จก่อน เพื่อให้ scrollHeight ใหม่พร้อมใช้)
+  if(_scrollEl){
+    requestAnimationFrame(function(){ _scrollEl.scrollTop=_savedScrollTop; });
+  }
 }
 
 function buildJM(svc,editMode){
