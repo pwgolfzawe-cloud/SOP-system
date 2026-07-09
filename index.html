@@ -313,6 +313,30 @@ var _LANES_KEY = 'int_custom_lanes_v1';
 var _laneModalSvcId = '';
 var _laneModalLanesTmp = [];
 
+/* ---- Supabase Key-Value cache (แทน localStorage: int_custom_steps_v1, int_custom_lanes_v1, ra_journey_mapping) ---- */
+var _kvCache = {};
+async function _loadKV(){
+  try{
+    var {data,error} = await _SB.from('app_kv').select('key,value');
+    if(error) throw error;
+    (data||[]).forEach(function(row){ _kvCache[row.key] = row.value; });
+  }catch(err){
+    console.warn('โหลดข้อมูล app_kv จาก Supabase ไม่สำเร็จ (ใช้ localStorage สำรองแทนชั่วคราว):', err);
+  }
+}
+function _kvGet(key){
+  if(_kvCache[key] !== undefined) return _kvCache[key];
+  var raw = localStorage.getItem(key);
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return null;
+}
+function _kvSet(key, value){
+  _kvCache[key] = value;
+  _SB.from('app_kv').upsert({key:key, value:value}, {onConflict:'key'}).then(function(r){
+    if(r.error) console.error('บันทึก '+key+' ขึ้น Supabase ไม่สำเร็จ:', r.error);
+  });
+}
+
 const SVC=[{"id": "s1", "name": "ขึ้นทะเบียนบุคลากรที่ปรึกษา", "icon": "👤", "color": "#009bd9", "colorLight": "#e0f4ff", "tag": "ขึ้นทะเบียน", "desc": "ขึ้นทะเบียนบุคลากรเป็นที่ปรึกษาในระบบที่ปรึกษาแห่งชาติ (นอลปรึกษา)", "chips": ["ส่วนงาน", "iNT (RA)", "นอลปรึกษา"], "lanes": ["ส่วนงาน", "iNT (RA)", "ที่ปรึกษาแห่งชาติ"], "laneColors": ["#e0f7ff", "#dbeafe", "#f0f0f0"], "steps": [{"id": 1, "name": "ตรวจสอบคุณสมบัติ", "lane": 0, "involves": [], "desc": "ส่วนงานตรวจสอบว่าบุคลากรมีคุณสมบัติตามเกณฑ์ที่กำหนด"}, {"id": 2, "name": "จัดเตรียมเอกสาร", "lane": 0, "involves": [], "desc": "รวบรวมเอกสารที่จำเป็นสำหรับการขอขึ้นทะเบียน"}, {"id": 3, "name": "ยื่นเอกสารมา iNT", "lane": 0, "involves": [1], "desc": "ส่วนงานส่งเอกสารทั้งหมดมายัง iNT เพื่อดำเนินการต่อ"}, {"id": 4, "name": "ดำเนินการขึ้นทะเบียน", "lane": 1, "involves": [2], "desc": "iNT ติดต่อและดำเนินการขอขึ้นทะเบียนกับที่ปรึกษาแห่งชาติ"}, {"id": 5, "name": "พิจารณาและแจ้งผล", "lane": 2, "involves": [1], "desc": "ที่ปรึกษาแห่งชาติพิจารณาคำขอและแจ้งผลกลับ iNT"}, {"id": 6, "name": "แจ้งผลและบันทึก", "lane": 1, "involves": [0], "desc": "iNT รับผล บันทึกข้อมูล และแจ้งผลให้ส่วนงานทราบ"}]}, {"id": "s2", "name": "บริหารโครงการวิจัย (หมวด 1)", "icon": "🔬", "color": "#005992", "colorLight": "#e0ecf8", "tag": "วิจัย หมวด 1", "desc": "บริหารจัดการโครงการให้บริการรับทำวิจัยและบริการทางวิชาการ ตั้งแต่รับโจทย์จนปิดโครงการ", "chips": ["ส่วนงาน", "iNT", "กองคลัง", "ผู้ว่าจ้าง"], "lanes": ["ส่วนงาน/นักวิจัย", "iNT (RA)", "กองคลัง", "ผู้ว่าจ้าง"], "laneColors": ["#e8f4fd", "#dbeafe", "#fef9e7", "#f0fff4"], "steps": [{"id": 1, "name": "3.1 ประชาสัมพันธ์", "lane": 1, "involves": [0], "desc": "iNT ประชาสัมพันธ์เชิญชวนให้ส่วนงานยื่นข้อเสนอโครงการ"}, {"id": 2, "name": "3.2 ยื่นข้อเสนอ", "lane": 0, "involves": [1], "desc": "ส่วนงานจัดทำและยื่นข้อเสนอโครงการมายัง iNT"}, {"id": 3, "name": "3.3 ลงนามสัญญา", "lane": 1, "involves": [0, 3], "desc": "iNT จัดทำและดำเนินการลงนามสัญญา/ข้อตกลงกับผู้ว่าจ้าง"}, {"id": 4, "name": "3.4 ขึ้นทะเบียน", "lane": 1, "involves": [], "desc": "iNT ขึ้นทะเบียนโครงการในระบบติดตามโครงการ"}, {"id": 5, "name": "3.5 ส่งมอบ/เบิกเงิน", "lane": 0, "involves": [1, 2], "desc": "ส่วนงานส่งมอบผลงานและยื่นขอเบิกเงินค่าจ้างผ่าน iNT"}, {"id": 6, "name": "3.6 จัดสรรเงิน", "lane": 2, "involves": [0, 1], "desc": "กองคลังตรวจสอบและดำเนินการโอนเงินค่าจ้างให้ส่วนงาน"}, {"id": 7, "name": "3.7 เปลี่ยนแปลง", "lane": 0, "involves": [1], "desc": "กรณีต้องการเปลี่ยนแปลงรายละเอียดโครงการ ส่วนงานยื่นขอผ่าน iNT"}, {"id": 8, "name": "3.8 ปิดโครงการ", "lane": 1, "involves": [0], "desc": "เมื่องานเสร็จสมบูรณ์ iNT ดำเนินการปิดโครงการในระบบ"}, {"id": 9, "name": "3.9 รายงานสิ้นปี", "lane": 1, "involves": [], "desc": "iNT รวบรวมและรายงานข้อมูลโครงการทั้งหมดเมื่อสิ้นปีงบประมาณ"}]}, {"id": "s3", "name": "โครงการทางวิชาการ (หมวด 2)", "icon": "📚", "color": "#f18700", "colorLight": "#fff3e0", "tag": "วิชาการ หมวด 2", "desc": "ให้คำปรึกษาและสนับสนุนโครงการให้บริการทางวิชาการของส่วนงาน ม.มหิดล", "chips": ["ส่วนงาน", "iNT", "คณะกรรมการ"], "lanes": ["ส่วนงาน", "iNT (RA)", "คณะกรรมการ"], "laneColors": ["#fff8f0", "#dbeafe", "#f5f5f5"], "steps": [{"id": 1, "name": "4.1 จัดตั้งโครงการ", "lane": 0, "involves": [1], "desc": "ส่วนงานจัดตั้งโครงการและขอรับคำปรึกษาจาก iNT"}, {"id": 2, "name": "ให้คำปรึกษา", "lane": 1, "involves": [0], "desc": "iNT ให้คำปรึกษาด้านกระบวนการและข้อกำหนดที่เกี่ยวข้อง"}, {"id": 3, "name": "ตรวจสอบเอกสาร", "lane": 1, "involves": [2], "desc": "iNT ตรวจสอบและรับรองเอกสารโครงการ"}, {"id": 4, "name": "ขึ้นทะเบียนโครงการ", "lane": 1, "involves": [0], "desc": "iNT ดำเนินการขึ้นทะเบียนโครงการในระบบ"}, {"id": 5, "name": "4.2 รายงานสิ้นปี", "lane": 0, "involves": [1], "desc": "ส่วนงานรายงานข้อมูลโครงการเมื่อสิ้นปีงบประมาณ"}, {"id": 6, "name": "รวบรวมข้อมูล", "lane": 1, "involves": [], "desc": "iNT รวบรวมข้อมูลโครงการทุกส่วนงาน จัดทำรายงานสรุป"}]}, {"id": "s4", "name": "MICC — Matching โจทย์วิจัย", "icon": "🤝", "color": "#6366f1", "colorLight": "#ede9fe", "tag": "MICC", "desc": "ศูนย์ร่วมคิดพาณิชย์นวัตกรรม: เชื่อมโยงโจทย์จากภาคเอกชนกับผู้เชี่ยวชาญ ม.มหิดล", "chips": ["ผู้ว่าจ้าง", "MICC", "ผู้เชี่ยวชาญ"], "lanes": ["ผู้ว่าจ้าง (ภาคเอกชน)", "MICC / iNT", "ผู้เชี่ยวชาญ/นักวิจัย"], "laneColors": ["#f0fff4", "#ede9fe", "#faf5ff"], "steps": [{"id": 1, "name": "รับโจทย์วิจัย", "lane": 1, "involves": [0], "desc": "MICC แสวงหาและรับโจทย์วิจัย/นวัตกรรมจากภาคเอกชน"}, {"id": 2, "name": "Matching ผู้เชี่ยวชาญ", "lane": 1, "involves": [2], "desc": "MICC ค้นหาและจับคู่โจทย์กับผู้เชี่ยวชาญที่เหมาะสม"}, {"id": 3, "name": "ลงนาม NDA", "lane": 1, "involves": [0, 2], "desc": "จัดทำและลงนามข้อตกลงรักษาความลับ (NDA) ทุกฝ่าย"}, {"id": 4, "name": "ประชุมร่วม", "lane": 1, "involves": [0, 2], "desc": "จัดประชุมร่วมระหว่างผู้ว่าจ้าง ผู้เชี่ยวชาญ และ MICC"}, {"id": 5, "name": "ร่างขอบเขตงาน", "lane": 1, "involves": [], "desc": "MICC ร่างและจัดทำขอบเขตงาน (TOR) จากผลการประชุม"}, {"id": 6, "name": "เจรจาราคา", "lane": 1, "involves": [0], "desc": "เสนอขอบเขตและเจรจาราคากับผู้ว่าจ้างจนตกลงได้"}, {"id": 7, "name": "ลงนามสัญญา", "lane": 1, "involves": [0], "desc": "จัดทำสัญญาอย่างเป็นทางการและลงนามทุกฝ่าย"}, {"id": 8, "name": "ดำเนินโครงการ", "lane": 2, "involves": [1], "desc": "ผู้เชี่ยวชาญดำเนินการวิจัยตามขอบเขตงานที่ตกลง"}, {"id": 9, "name": "ส่งมอบงาน", "lane": 2, "involves": [0, 1], "desc": "ผู้เชี่ยวชาญส่งมอบผลงานให้ผู้ว่าจ้างผ่าน MICC"}, {"id": 10, "name": "ประเมินผล", "lane": 1, "involves": [0, 2], "desc": "ประเมินความพึงพอใจ ผลสำเร็จ และบันทึกองค์ความรู้"}]},{"id":"s5","name":"ศูนย์บริการวิชาการและฝึกอบรม (CATS)","icon":"🎓","color":"#C8102E","colorLight":"#fde8eb","tag":"CATS","desc":"บริหารจัดการหลักสูตรฝึกอบรม ตั้งแต่วิเคราะห์ความต้องการ ออกแบบหลักสูตร วางแผน ดำเนินการ และประเมินผล","chips":["CATS Team","ทีม SC","การเงิน"],"lanes":["CATS Team","ทีม SC / Admin","การเงิน","วิทยากร","ผู้เข้าอบรม / ลูกค้า"],"laneColors":["#d1fae5","#dbeafe","#fef9e7","#fce7f3","#f0fff4"],"steps":[{"id":1,"name":"วิเคราะห์ความต้องการ","lane":0,"involves":[4],"desc":"วิเคราะห์ Training Needs และ Learning Needs กำหนด Concept และ Learning Objectives (T-15 วัน)"},{"id":2,"name":"ออกแบบหลักสูตร","lane":0,"involves":[3],"desc":"ออกแบบโครงสร้างหลักสูตร (Module/Session) กำหนดรูปแบบ วิทยากร และจัดทำ Course Proposal (T-30 วัน)"},{"id":3,"name":"เสนออนุมัติ","lane":0,"involves":[],"desc":"จัดทำงบประมาณ Course Proposal และเสนออนุมัติการจัดทำหลักสูตรต่อผู้บริหาร"},{"id":4,"name":"ประชาสัมพันธ์ & รับสมัคร","lane":1,"involves":[0,4],"desc":"ดำเนินการประชาสัมพันธ์ (Marketing & PR) และเปิดรับสมัคร Registration (T-30 วันทำการ)"},{"id":5,"name":"เตรียมการ","lane":0,"involves":[1,3],"desc":"ประสานวิทยากร กำหนดวัน/เวลา/สถานที่ จัดเตรียมระบบ เอกสาร และอุปกรณ์"},{"id":6,"name":"ดำเนินการอบรม","lane":3,"involves":[0,4],"desc":"ลงทะเบียน ดำเนินการตาม Agenda ควบคุมคุณภาพ ดูแล Participant Experience และเก็บ Feedback"},{"id":7,"name":"ดำเนินการด้านการเงิน","lane":2,"involves":[4],"desc":"ดำเนินการ Invoice / Receipt / Payment และจัดการเอกสารการเงินที่เกี่ยวข้อง"},{"id":8,"name":"ประเมินผลและสรุป","lane":0,"involves":[],"desc":"รวบรวมแบบประเมิน วิเคราะห์ความพึงพอใจ สรุปผล และจัดทำรายงานเสนอผู้บริหาร (T-7 วัน)"}]}];
 
 function showLayer(id){
@@ -679,34 +703,36 @@ function buildSL(svc){
    ============================================================ */
 // _mCtx, _sopFlat, _staffPhotos declared at top of script
 
-function _loadSopData() {
-  var raw = localStorage.getItem('int_sop_v4');
-  if (!raw) return false;
-  var data;
-  try { data = JSON.parse(raw); } catch(e) { return false; }
-  _sopFlat = [];
-  Object.keys(data).forEach(function(dk) {
-    var dept = data[dk];
-    if (!dept.processes) return;
-    dept.processes.forEach(function(proc) {
-      if (!proc.sops) return;
-      proc.sops.forEach(function(sop) {
-        _sopFlat.push({
-          id: sop.id, name: sop.name,
-          dept: dept.abbr || dk, deptFull: dept.full || dk,
-          proc: proc.name, status: sop.status || '',
-          approver: sop.person || '',
-          color: dept.color || '#005992'
-        });
+async function _loadSopData() {
+  try {
+    var r1 = await _SB.from('departments').select('id,full_name,color');
+    var r2 = await _SB.from('processes').select('id,name,department_id');
+    var r3 = await _SB.from('sops').select('id,name,person,status,process_id');
+    if (r1.error) throw r1.error; if (r2.error) throw r2.error; if (r3.error) throw r3.error;
+    if (!r3.data || !r3.data.length) return false;
+    var deptIdx = {}; (r1.data||[]).forEach(function(d){ deptIdx[d.id] = d; });
+    var procIdx = {}; (r2.data||[]).forEach(function(p){ procIdx[p.id] = p; });
+    _sopFlat = [];
+    (r3.data||[]).forEach(function(sop) {
+      var proc = procIdx[sop.process_id]; if (!proc) return;
+      var dept = deptIdx[proc.department_id] || {};
+      _sopFlat.push({
+        id: sop.id, name: sop.name,
+        dept: proc.department_id, deptFull: dept.full_name || proc.department_id,
+        proc: proc.name, status: sop.status || '',
+        approver: sop.person || '',
+        color: dept.color || '#005992'
       });
     });
-  });
-  return true;
+    return true;
+  } catch(err) {
+    console.warn('โหลดข้อมูล SOP จาก Supabase ไม่สำเร็จ:', err);
+    return false;
+  }
 }
 
 function _getMapping() {
-  var raw = localStorage.getItem('ra_journey_mapping');
-  return raw ? JSON.parse(raw) : {};
+  return _kvGet('ra_journey_mapping') || {};
 }
 
 function _updateFtrCount() {
@@ -714,9 +740,9 @@ function _updateFtrCount() {
   document.getElementById('sopFtrCount').textContent = n > 0 ? 'เลือกแล้ว ' + n + ' รายการ' : '';
 }
 
-function openSOPModal(svcId, stepId, laneIdx) {
-  if (!_loadSopData()) {
-    alert('ยังไม่พบข้อมูล SOP\nกรุณาเปิด "กระบวนการหลัก SOP" อย่างน้อย 1 ครั้งก่อน');
+async function openSOPModal(svcId, stepId, laneIdx) {
+  if (!await _loadSopData()) {
+    alert('ยังไม่พบข้อมูล SOP\nกรุณาเปิด "กระบวนการหลัก SOP" อย่างน้อย 1 ครั้งก่อน หรือตรวจสอบว่า login อยู่หรือไม่');
     return;
   }
   var steps = _getSteps(svcId);
@@ -846,6 +872,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (bg) bg.addEventListener('click', function(e) {
     if (e.target === this) closeSOPModal();
   });
+  _loadKV();
 });
 
 function closeSOPModal() {
@@ -866,7 +893,7 @@ function saveSOPModal() {
   });
   // ลบ legacy global key (svcId_stepId) ที่ค้างจากระบบเก่า — migrate ไป per-lane แล้ว
   delete mapping[_mCtx.svcId + '_' + _mCtx.stepId];
-  localStorage.setItem('ra_journey_mapping', JSON.stringify(mapping));
+  _kvSet('ra_journey_mapping', mapping);
   closeSOPModal();
   showDetail(_mCtx.svcId);
 }
@@ -926,9 +953,7 @@ function _personAvatar(name) {
    Step CRUD — localStorage key: int_custom_steps_v1
    ============================================================ */
 function _getSteps(svcId){
-  var raw=localStorage.getItem(_STEPS_KEY);
-  var custom={};
-  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  var custom=_kvGet(_STEPS_KEY)||{};
   var steps;
   if(custom[svcId]) steps=custom[svcId];
   else{var svc=SVC.find(function(s){return s.id===svcId;});steps=svc?JSON.parse(JSON.stringify(svc.steps)):[];}
@@ -939,11 +964,9 @@ function _getSteps(svcId){
   return steps;
 }
 function _saveSteps(svcId,steps){
-  var raw=localStorage.getItem(_STEPS_KEY);
-  var custom={};
-  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  var custom=_kvGet(_STEPS_KEY)||{};
   custom[svcId]=steps;
-  localStorage.setItem(_STEPS_KEY,JSON.stringify(custom));
+  _kvSet(_STEPS_KEY,custom);
 }
 function _reindexAndSave(svcId,steps){
   var mapping=_getMapping();
@@ -961,7 +984,7 @@ function _reindexAndSave(svcId,steps){
       }
     } else { nm[k]=mapping[k]; }
   });
-  localStorage.setItem('ra_journey_mapping',JSON.stringify(nm));
+  _kvSet('ra_journey_mapping',nm);
   steps.forEach(function(s,i){s.id=i+1;});
   _saveSteps(svcId,steps);
 }
@@ -1066,19 +1089,15 @@ function saveStepModal(){
    Lane Management — localStorage key: int_custom_lanes_v1
    ============================================================ */
 function _getLanes(svcId){
-  var raw=localStorage.getItem(_LANES_KEY);
-  var custom={};
-  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  var custom=_kvGet(_LANES_KEY)||{};
   if(custom[svcId]) return custom[svcId];
   var svc=SVC.find(function(s){return s.id===svcId;});
   return svc?svc.lanes.slice():[];
 }
 function _saveLanes(svcId,lanes){
-  var raw=localStorage.getItem(_LANES_KEY);
-  var custom={};
-  if(raw){try{custom=JSON.parse(raw);}catch(e){}}
+  var custom=_kvGet(_LANES_KEY)||{};
   custom[svcId]=lanes;
-  localStorage.setItem(_LANES_KEY,JSON.stringify(custom));
+  _kvSet(_LANES_KEY,custom);
 }
 // เพิ่ม/ลบ lane เป็นผู้รับผิดชอบหลักของ step (จาก Swimlane edit mode)
 function _addPrimaryLane(svcId,stepId,laneIdx){
@@ -1134,7 +1153,7 @@ function _remapAndSaveLanes(svcId,newLanes){
       } else { nm[k]=mapping[k]; }
     } else { nm[k]=mapping[k]; }
   });
-  localStorage.setItem('ra_journey_mapping',JSON.stringify(nm));
+  _kvSet('ra_journey_mapping',nm);
   _saveLanes(svcId,newLanes);
 }
 function openLaneModal(svcId){
