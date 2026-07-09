@@ -144,7 +144,7 @@ body{font-family:"Sarabun","Segoe UI",sans-serif;background:#f0f4f8;min-height:1
       <div class="field-group"><label class="field-label">สถานะ</label><select class="field-select" id="peDiS"><option value="pending">&#x23F3; รออนุมัติ</option><option value="approved">&#x2705; อนุมัติ</option><option value="rejected">&#x274C; ส่งกลับ</option></select></div></div>
     </div></div>
   </div>
-  <div class="modal-footer"><button class="btn-mc" onclick="closePMd()">ยกเลิก</button><button class="btn-ms" onclick="savePM()">บันทึก</button></div>
+  <div class="modal-footer"><button class="btn-mc" onclick="closePMd()">ยกเลิก</button><button class="btn-ms" id="pmSaveBtn" onclick="savePM()">บันทึก</button></div>
  </div>
 </div>
 <div class="modal-overlay" id="smOv" onclick="closeSM(event)">
@@ -172,7 +172,7 @@ body{font-family:"Sarabun","Segoe UI",sans-serif;background:#f0f4f8;min-height:1
     </div>
    </div>
   </div>
-  <div class="modal-footer"><button class="btn-mc" onclick="closeSMd()">ยกเลิก</button><button class="btn-ms" onclick="saveSM()">บันทึก</button></div>
+  <div class="modal-footer"><button class="btn-mc" onclick="closeSMd()">ยกเลิก</button><button class="btn-ms" id="smSaveBtn" onclick="saveSM()">บันทึก</button></div>
  </div>
 </div>
 <div class="footer"><strong>iNT Mahidol</strong> &#xB7; Interactive SOP Management &#xB7; จัดทำโดย SOP Officer</div>
@@ -246,8 +246,8 @@ async function pushS(){
     alert('บันทึกไม่สำเร็จ — กรุณาตรวจสอบว่า login อยู่หรือไม่ และเช็คการเชื่อมต่ออินเทอร์เน็ต\n('+(err&&err.message||err)+')');
   }
 }
-function saveAll(){pushS();show('saveStatus',2000);}
-function autoSave(){pushS();}
+async function saveAll(){await pushS();show('saveStatus',2000);}
+async function autoSave(){await pushS();}
 function resetData(){if(!confirm('รีเซ็ตข้อมูล? การกระทำนี้จะเขียนทับข้อมูลปัจจุบันบน Supabase ด้วยชุดข้อมูลตั้งต้น'))return;S=JSON.parse(JSON.stringify(RD));pushS();render();}
 function exportJSON(){var b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='int_sop_data.json';a.click();}
 function exportXLSX(){
@@ -292,7 +292,7 @@ function renderContent(){
   }).join('');
   initSort(AD);
 }
-function initSort(di){var g=document.getElementById('grid-'+di);if(!g||g._s)return;g._s=new Sortable(g,{animation:180,ghostClass:'sortable-ghost',chosenClass:'sortable-chosen',handle:'.drag-handle',onEnd:function(){var dk=DO[di],ids=Array.from(g.querySelectorAll('.process-card')).map(function(c){return c.dataset.procId;});S[dk].processes=ids.map(function(id){return S[dk].processes.find(function(p){return p.id===id;});}).filter(Boolean);autoSave();renderStats();}});}
+function initSort(di){var g=document.getElementById('grid-'+di);if(!g||g._s)return;g._s=new Sortable(g,{animation:180,ghostClass:'sortable-ghost',chosenClass:'sortable-chosen',handle:'.drag-handle',onEnd:async function(){var dk=DO[di],ids=Array.from(g.querySelectorAll('.process-card')).map(function(c){return c.dataset.procId;});S[dk].processes=ids.map(function(id){return S[dk].processes.find(function(p){return p.id===id;});}).filter(Boolean);await autoSave();renderStats();}});}
 function sw(i){AD=i;renderTabs();document.querySelectorAll('.dept-section').forEach(function(e,j){e.classList.toggle('active',j===i);});document.querySelectorAll('.tab').forEach(function(e,j){e.classList.toggle('active',j===i);});initSort(i);}
 function toggleC(c){c.classList.toggle('open');}
 function getOC(){var s=new Set();document.querySelectorAll('.process-card.open').forEach(function(c){s.add(c.dataset.procId);});return s;}
@@ -300,7 +300,7 @@ function restOC(s){document.querySelectorAll('.process-card').forEach(function(c
 function openPM(dk,pid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;});pCtx={dk:dk,pid:pid};document.getElementById('pmTag').textContent=d.abbr;document.getElementById('pmTag').style.background=d.color;document.getElementById('pmSub').textContent=d.full;document.getElementById('pmTitle').textContent='แก้ไขกระบวนการหลัก';document.getElementById('peName').value=p.name;document.getElementById('peSt').value=p.status||'ร่าง';document.getElementById('peOw').value=p.owner||'';document.getElementById('peOwS').value=p.owner_status||'pending';document.getElementById('peAp').value=p.approver||'';document.getElementById('peApS').value=p.approver_status||'pending';document.getElementById('peDp').value=p.deputy||'';document.getElementById('peDpS').value=p.deputy_status||'pending';document.getElementById('peDi').value=p.director||'';document.getElementById('peDiS').value=p.director_status||'pending';document.getElementById('pmOv').classList.add('open');}
 function closePM(e){if(e.target===document.getElementById('pmOv'))closePMd();}
 function closePMd(){document.getElementById('pmOv').classList.remove('open');pCtx=null;}
-function savePM(){if(!pCtx)return;var dk=pCtx.dk,pid=pCtx.pid,p;if(pid===null){p={id:'proc_'+Date.now()+'_'+dk.slice(0,4),name:'',sops:[],approver:'',approver_status:'pending',deputy:'',deputy_status:'pending',director:'',director_status:'pending',owner:'',owner_status:'pending',status:'ร่าง'};S[dk].processes.push(p);}else{p=S[dk].processes.find(function(x){return x.id===pid;});}p.name=document.getElementById('peName').value.trim();p.status=document.getElementById('peSt').value;p.owner=document.getElementById('peOw').value.trim();p.owner_status=document.getElementById('peOwS').value;p.approver=document.getElementById('peAp').value.trim();p.approver_status=document.getElementById('peApS').value;p.deputy=document.getElementById('peDp').value.trim();p.deputy_status=document.getElementById('peDpS').value;p.director=document.getElementById('peDi').value.trim();p.director_status=document.getElementById('peDiS').value;var oc=getOC();closePMd();autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
+async function savePM(){if(!pCtx)return;var dk=pCtx.dk,pid=pCtx.pid,p;if(pid===null){p={id:'proc_'+Date.now()+'_'+dk.slice(0,4),name:'',sops:[],approver:'',approver_status:'pending',deputy:'',deputy_status:'pending',director:'',director_status:'pending',owner:'',owner_status:'pending',status:'ร่าง'};S[dk].processes.push(p);}else{p=S[dk].processes.find(function(x){return x.id===pid;});}p.name=document.getElementById('peName').value.trim();p.status=document.getElementById('peSt').value;p.owner=document.getElementById('peOw').value.trim();p.owner_status=document.getElementById('peOwS').value;p.approver=document.getElementById('peAp').value.trim();p.approver_status=document.getElementById('peApS').value;p.deputy=document.getElementById('peDp').value.trim();p.deputy_status=document.getElementById('peDpS').value;p.director=document.getElementById('peDi').value.trim();p.director_status=document.getElementById('peDiS').value;var oc=getOC();var _btn=document.getElementById('pmSaveBtn');if(_btn){_btn.disabled=true;_btn.textContent='กำลังบันทึก…';}await autoSave();if(_btn){_btn.disabled=false;_btn.textContent='บันทึก';}closePMd();renderContent();sw(AD);restOC(oc);renderStats();}
 /* ---- SOP modal ---- */
 function buildMvDeptOpts(selDk){return DO.map(function(dk){return '<option value="'+dk+'"'+(dk===selDk?' selected':'')+'>'+S[dk].abbr+' — '+S[dk].full+'</option>';}).join('');}
 function buildMvProcOpts(dk,selPid){return S[dk].processes.map(function(p){return '<option value="'+p.id+'"'+(p.id===selPid?' selected':'')+'>'+p.name+'</option>';}).join('');}
@@ -310,7 +310,7 @@ function checkMvChanged(){if(!sCtx)return;var nd=document.getElementById('mvDept
 function openSM(dk,pid,sid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});sCtx={dk:dk,pid:pid,sid:sid};document.getElementById('smTag').textContent=d.abbr;document.getElementById('smTag').style.background=d.color;document.getElementById('smProc').textContent=p.name;document.getElementById('eName').value=sop.name;document.getElementById('ePer').value=sop.person;document.getElementById('eSt').value=sop.status||'ร่าง';document.getElementById('eLnk').value=sop.link||'';document.getElementById('eNt').value=sop.notes||'';document.getElementById('mvDept').innerHTML=buildMvDeptOpts(dk);document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,pid);document.getElementById('mvNote').style.display='none';document.getElementById('smOv').classList.add('open');}
 function closeSM(e){if(e.target===document.getElementById('smOv'))closeSMd();}
 function closeSMd(){document.getElementById('smOv').classList.remove('open');sCtx=null;}
-function saveSM(){
+async function saveSM(){
   if(!sCtx)return;
   var origDK=sCtx.dk,origPid=sCtx.pid,origSid=sCtx.sid;
   var newDK=document.getElementById('mvDept').value;
@@ -336,13 +336,17 @@ function saveSM(){
       newP.sops.push(sop);
     }
   }
-  var oc=getOC();closeSMd();autoSave();renderContent();sw(AD);restOC(oc);renderStats();
+  var oc=getOC();
+  var _btn=document.getElementById('smSaveBtn');if(_btn){_btn.disabled=true;_btn.textContent='กำลังบันทึก…';}
+  await autoSave();
+  if(_btn){_btn.disabled=false;_btn.textContent='บันทึก';}
+  closeSMd();renderContent();sw(AD);restOC(oc);renderStats();
 }
 function render(){renderTabs();renderContent();renderStats();}
 function openAddPM(dk){var d=S[dk];pCtx={dk:dk,pid:null};document.getElementById('pmTag').textContent=d.abbr;document.getElementById('pmTag').style.background=d.color;document.getElementById('pmSub').textContent=d.full;document.getElementById('pmTitle').textContent='เพิ่มกระบวนการหลัก';document.getElementById('peName').value='';document.getElementById('peSt').value='ร่าง';document.getElementById('peOw').value='';document.getElementById('peOwS').value='pending';document.getElementById('peAp').value='';document.getElementById('peApS').value='pending';document.getElementById('peDp').value='';document.getElementById('peDpS').value='pending';document.getElementById('peDi').value='';document.getElementById('peDiS').value='pending';document.getElementById('pmOv').classList.add('open');}
 function openAddSM(dk,pid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;});sCtx={dk:dk,pid:pid,sid:null};document.getElementById('smTag').textContent=d.abbr;document.getElementById('smTag').style.background=d.color;document.getElementById('smProc').textContent=p.name;document.getElementById('smTitle').textContent='เพิ่มกระบวนการย่อย / SOP';document.getElementById('eName').value='';document.getElementById('ePer').value='';document.getElementById('eSt').value='ร่าง';document.getElementById('eLnk').value='';document.getElementById('eNt').value='';document.getElementById('mvDept').innerHTML=buildMvDeptOpts(dk);document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,pid);document.getElementById('mvNote').style.display='none';document.getElementById('smOv').classList.add('open');}
-function deleteProc(dk,pid){var p=S[dk].processes.find(function(x){return x.id===pid;});if(!confirm('ลบกระบวนการ "'+p.name+'" และ SOP ทั้งหมดในกระบวนการนี้ใช่ไหม?'))return;S[dk].processes=S[dk].processes.filter(function(x){return x.id!==pid;});var oc=getOC();autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
-function deleteSOP(dk,pid,sid){var p=S[dk].processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});if(!confirm('ลบ SOP "'+sop.name+'" ใช่ไหม?'))return;p.sops=p.sops.filter(function(x){return x.id!==sid;});var oc=getOC();autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
+async function deleteProc(dk,pid){var p=S[dk].processes.find(function(x){return x.id===pid;});if(!confirm('ลบกระบวนการ "'+p.name+'" และ SOP ทั้งหมดในกระบวนการนี้ใช่ไหม?'))return;S[dk].processes=S[dk].processes.filter(function(x){return x.id!==pid;});var oc=getOC();await autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
+async function deleteSOP(dk,pid,sid){var p=S[dk].processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});if(!confirm('ลบ SOP "'+sop.name+'" ใช่ไหม?'))return;p.sops=p.sops.filter(function(x){return x.id!==sid;});var oc=getOC();await autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
 loadS().then(render);</script>
 </body>
 </html>
