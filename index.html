@@ -1014,9 +1014,9 @@ function deleteStep(svcId,stepId){
 function _rebuildStepModalLanes(svcId,primaryChecked,involvesChecked){
   var lanes=_getLanes(svcId);
   var chk=function(arr,i){return arr&&arr.indexOf(i)!==-1?' checked':'';};
-  document.getElementById('stepPrimaryLanesGroup').innerHTML=
+  document.getElementById('stepLanesCheckboxes').innerHTML=
     lanes.map(function(l,i){return '<label class="step-involves-item"><input type="checkbox" value="'+i+'"'+chk(primaryChecked,i)+'> '+l+'</label>';}).join('');
-  document.getElementById('stepInvolvesGroup').innerHTML=
+  document.getElementById('stepInvCheckboxes').innerHTML=
     lanes.map(function(l,i){return '<label class="step-involves-item"><input type="checkbox" value="'+i+'"'+chk(involvesChecked,i)+'> '+l+'</label>';}).join('');
 }
 // backward compat alias (used by addLaneFromStep indirectly)
@@ -1050,12 +1050,12 @@ function addLaneFromStep(){
   if(lanes.indexOf(val)===-1){ lanes.push(val); _saveLanes(svcId,lanes); }
   // collect currently checked before rebuild
   var priChecked=[],invChecked=[];
-  document.getElementById('stepPrimaryLanesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){priChecked.push(parseInt(cb.value));});
-  document.getElementById('stepInvolvesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){invChecked.push(parseInt(cb.value));});
+  document.getElementById('stepLanesCheckboxes').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){priChecked.push(parseInt(cb.value));});
+  document.getElementById('stepInvCheckboxes').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){invChecked.push(parseInt(cb.value));});
   _rebuildStepModalLanes(svcId,priChecked,invChecked);
   // auto-check new lane in involves
   var newIdx=_getLanes(svcId).indexOf(val);
-  var invBoxes=document.getElementById('stepInvolvesGroup').querySelectorAll('input[type=checkbox]');
+  var invBoxes=document.getElementById('stepInvCheckboxes').querySelectorAll('input[type=checkbox]');
   if(invBoxes[newIdx]) invBoxes[newIdx].checked=true;
   inp.value='';
 }
@@ -1064,11 +1064,11 @@ function saveStepModal(){
   if(!name){alert('กรุณาระบุชื่อขั้นตอน');return;}
   var desc=document.getElementById('stepDescInput').value.trim();
   var primLanes=[];
-  document.getElementById('stepPrimaryLanesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){primLanes.push(parseInt(cb.value));});
+  document.getElementById('stepLanesCheckboxes').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){primLanes.push(parseInt(cb.value));});
   if(primLanes.length===0){alert('กรุณาเลือกผู้รับผิดชอบหลักอย่างน้อย 1 คน');return;}
   var lane=primLanes[0]; // backward compat: keep first as step.lane
   var involves=[];
-  document.getElementById('stepInvolvesGroup').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){involves.push(parseInt(cb.value));});
+  document.getElementById('stepInvCheckboxes').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){involves.push(parseInt(cb.value));});
   var svcId=_stepCtx.svcId;
   var steps=_getSteps(svcId);
   if(_stepCtx.mode==='add'){
