@@ -324,6 +324,7 @@ async function _loadKV(){
     console.warn('โหลดข้อมูล app_kv จาก Supabase ไม่สำเร็จ (ใช้ localStorage สำรองแทนชั่วคราว):', err);
   }
 }
+var _kvReadyPromise = _loadKV(); // เริ่มดึงข้อมูลทันทีที่ script โหลด ไม่ต้องรอ DOMContentLoaded
 function _kvGet(key){
   if(_kvCache[key] !== undefined) return _kvCache[key];
   var raw = localStorage.getItem(key);
@@ -487,9 +488,12 @@ function initials(name){
 }
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
-function showDetail(id){
+async function showDetail(id){
   var svc=SVC.find(function(s){return s.id===id;});
   if(!svc) return;
+  // รอให้ _loadKV() (custom steps/lanes/journey mapping จาก Supabase) โหลดเสร็จก่อนเสมอ
+  // กันปัญหาเข้าเว็บเครื่อง/เน็ตที่โหลดช้ากว่า แล้วเห็นข้อมูล default แทนข้อมูลจริงที่เคยแก้ไว้
+  await _kvReadyPromise;
   // จำตำแหน่งสกรอลปัจจุบันของ .detail-body ไว้ก่อน — เพราะ innerHTML re-render
   // ด้านล่างจะรีเซ็ตสกรอลกลับบนสุดถ้าไม่กู้คืนเอง (ทำให้ต้องเลื่อนหาใหม่ทุกครั้งที่บันทึก SOP)
   var _scrollEl=document.querySelector('.detail-body');
@@ -886,7 +890,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if (bg) bg.addEventListener('click', function(e) {
     if (e.target === this) closeSOPModal();
   });
-  _loadKV();
 });
 
 function closeSOPModal() {
