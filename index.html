@@ -302,6 +302,12 @@
 </div></div></div>
 <div id="layer3" style="display:none;flex-direction:column;flex:1"><div class="layer-tbar"><div class="layer-tbar-main" id="l3title"></div></div><div class="back-bar"><button class="btn-home" onclick="goHome()">&#x1F3E0; หน้าหลัก</button><button class="btn-back" onclick="goRACards()">&#x2190; กลับ</button><span class="back-label" id="l3breadcrumb"></span></div><div class="detail-body"><div class="detail-inner" id="l3content"></div></div></div><div class="footer"><strong>iNT Mahidol</strong> &#xB7; ระบบบริหารจัดการกระบวนการ &#xB7; จัดทำโดย SOP Officer</div>
 <script>
+// สร้าง Supabase client ไว้บนสุดของสคริปต์ก่อนสิ่งอื่นใด — ต้องมาก่อน _loadKV()
+// ที่เรียกใช้งานทันทีด้านล่าง ไม่งั้นจะ error "_SB is not defined"
+const _SB = supabase.createClient(
+  'https://lrxjngcsqtrvevbyjqdb.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyeGpuZ2NzcXRydmV2YnlqcWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwNDcyNTIsImV4cCI6MjA5ODYyMzI1Mn0.536QGLQEDFzNnTaA-tE5v_t8szCx41ygVnxj6yLb8KE'
+);
 // Init globals early so no reference errors even if later code fails
 var _staffPhotos = {};
 var _mCtx = {svcId:'', stepId:0, selected:{}, laneIdx:0, primLanes:[0], laneTemp:{}};
@@ -1495,10 +1501,7 @@ function saveLaneModal(){
 
 <script>
 // ─── Supabase Auth ──────────────────────────────────────────────────────────────────
-const _SB = supabase.createClient(
-  'https://lrxjngcsqtrvevbyjqdb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyeGpuZ2NzcXRydmV2YnlqcWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwNDcyNTIsImV4cCI6MjA5ODYyMzI1Mn0.536QGLQEDFzNnTaA-tE5v_t8szCx41ygVnxj6yLb8KE'
-);
+// _SB ถูกสร้างไว้แล้วในสคริปต์บล็อกแรกด้านบนของไฟล์ (ต้องมาก่อน _loadKV())
 
 function _authShow(session){
   const ls = document.getElementById('loginScreen');
