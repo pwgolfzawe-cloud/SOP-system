@@ -199,7 +199,7 @@ async function loadS(){
   try{
     var r1=await _SB2.from('departments').select('*').order('sort_order');
     var r2=await _SB2.from('processes').select('*').order('sort_order');
-    var r3=await _SB2.from('sops').select('*').order('sort_order');
+    var r3=await _SB2.from('sops').select('id,process_id,name,person,notes,status,link,sort_order,has_content').order('sort_order');
     if(r1.error)throw r1.error; if(r2.error)throw r2.error; if(r3.error)throw r3.error;
     if(!r1.data||!r1.data.length)throw new Error('ยังไม่มีข้อมูลใน Supabase');
     var ns={};
@@ -216,7 +216,7 @@ async function loadS(){
     });
     r3.data.forEach(function(s){
       var p=procIndex[s.process_id];if(!p)return;
-      p.sops.push({id:s.id,name:s.name,person:s.person||'',notes:s.notes||'',status:s.status||'ร่าง',link:s.link||'',content:s.content||''});
+      p.sops.push({id:s.id,name:s.name,person:s.person||'',notes:s.notes||'',status:s.status||'ร่าง',link:s.link||'',hasContent:!!s.has_content});
     });
     S=ns;
   }catch(err){
@@ -239,7 +239,7 @@ async function pushS(){
       p.sops.forEach(function(s,si){
         sopIds.push(s.id);
         sopRows.push({id:s.id,process_id:p.id,name:s.name,person:s.person||null,notes:s.notes||'',
-          status:s.status||'ร่าง',link:s.link||'',content:s.content||'',sort_order:si});
+          status:s.status||'ร่าง',link:s.link||'',sort_order:si});
       });
     });
   });
@@ -298,7 +298,7 @@ function renderContent(){
     var d=S[dk],c=d.color,ts=d.processes.reduce(function(s,p){return s+p.sops.length;},0);
     var cards=d.processes.map(function(proc){
       var chain='<div class="approval-chain">'+apS('Owner',proc.owner_status)+'<span class="ap-arrow">›</span>'+apS('หัวหน้า',proc.approver_status)+'<span class="ap-arrow">›</span>'+apS('รอง ผอ.',proc.deputy_status)+'<span class="ap-arrow">›</span>'+apS('ผอ.',proc.director_status)+'</div>';
-      var sops=proc.sops.map(function(sop){return '<div class="sop-item" style="background:'+c+'0d" onclick="openSM(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')"><div class="sop-item-info"><div class="sop-name">'+esc(sop.name)+'<span class="dept-tag" style="background:'+c+'">'+d.abbr+'</span></div><div class="sop-person">👤 '+esc(sop.person)+(sop.link?' \xb7 <a href="'+esc(sop.link)+'" target="_blank" onclick="event.stopPropagation()" style="color:'+c+'">🔗</a>':'')+' \xb7 <span onclick="event.stopPropagation();openContentModal(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')" title="เปิดเขียน/แก้ไขเนื้อหา SOP" style="cursor:pointer;color:'+(sop.content?"#10b981":"#94a3b8")+';text-decoration:underline;text-underline-offset:2px">📄 '+(sop.content?"มีเนื้อหา":"ยังไม่มีเนื้อหา")+'</span>'+'</div></div><span class="sop-sb '+sC(sop.status)+'">'+(sop.status||'ร่าง')+'</span><button class="sop-del-btn" onclick="event.stopPropagation();deleteSOP(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')" title="ลบ SOP">🗑</button></div>';}).join('');
+      var sops=proc.sops.map(function(sop){return '<div class="sop-item" style="background:'+c+'0d" onclick="openSM(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')"><div class="sop-item-info"><div class="sop-name">'+esc(sop.name)+'<span class="dept-tag" style="background:'+c+'">'+d.abbr+'</span></div><div class="sop-person">👤 '+esc(sop.person)+(sop.link?' \xb7 <a href="'+esc(sop.link)+'" target="_blank" onclick="event.stopPropagation()" style="color:'+c+'">🔗</a>':'')+' \xb7 <span onclick="event.stopPropagation();openContentModal(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')" title="เปิดเขียน/แก้ไขเนื้อหา SOP" style="cursor:pointer;color:'+(sop.hasContent?"#10b981":"#94a3b8")+';text-decoration:underline;text-underline-offset:2px">📄 '+(sop.hasContent?"มีเนื้อหา":"ยังไม่มีเนื้อหา")+'</span>'+'</div></div><span class="sop-sb '+sC(sop.status)+'">'+(sop.status||'ร่าง')+'</span><button class="sop-del-btn" onclick="event.stopPropagation();deleteSOP(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')" title="ลบ SOP">🗑</button></div>';}).join('');
       return '<div class="process-card" style="border-color:'+c+'55;background:'+c+'0a" data-proc-id="'+proc.id+'"><div class="card-header"><div class="card-header-left" onclick="toggleC(this.closest(\'.process-card\'))"><span class="drag-handle">⢳</span><div class="card-title-block"><div class="card-title" style="color:'+c+'">'+esc(proc.name)+'</div>'+chain+'</div></div><div class="card-header-right"><button class="icon-btn" title="แก้ไข" onclick="event.stopPropagation();openPM(\''+dk+'\',\''+proc.id+'\')">✏️</button><button class="icon-btn" title="ลบกระบวนการ" onclick="event.stopPropagation();deleteProc(\''+dk+'\',\''+proc.id+'\')" style="color:#ef4444">🗑</button><span class="badge" style="background:'+c+'">'+proc.sops.length+' SOP</span><span class="arrow" style="color:'+c+'" onclick="toggleC(this.closest(\'.process-card\'))">▼</span></div></div><div class="sop-list" style="border-color:'+c+'33">'+sops+'<button class="add-sop-btn" onclick="openAddSM(\''+dk+'\',\''+proc.id+'\')">＋ เพิ่มกระบวนการย่อย / SOP</button></div></div>';
     }).join('');
     return '<div class="dept-section '+(di===AD?'active':'')+'" id="dept-'+di+'"><div class="dept-header" style="background:'+c+'"><div><div class="dept-name">'+d.full+'</div><div class="dept-sub">'+ts+' SOP \xb7 '+d.processes.length+' กระบวนการ</div><div class="dept-hint">✏️ แก้ไข \xb7 คลิก SOP \xb7 ⢳ ลาก</div></div><span class="dept-abbr">'+d.abbr+'</span></div><div class="processes" id="grid-'+di+'">'+cards+'<div style="grid-column:1/-1"><button class="add-proc-btn" onclick="openAddPM(\''+dk+'\')">＋ เพิ่มกระบวนการหลัก</button></div></div></div>';
@@ -360,7 +360,7 @@ function _updateContentCharCount(){
   var cc=document.getElementById('contentCharCount');
   if(ta&&cc)cc.textContent=ta.value.length+' ตัวอักษร';
 }
-function openContentModal(dk,pid,sid){
+async function openContentModal(dk,pid,sid){
   var d=S[dk],p=d.processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});
   if(!sop)return;
   cCtx={dk:dk,pid:pid,sid:sid};
@@ -369,11 +369,22 @@ function openContentModal(dk,pid,sid){
   document.getElementById('contentSopProc').textContent=p.name;
   document.getElementById('contentSopName').textContent=sop.name;
   var ta=document.getElementById('eContentBig');
-  ta.value=sop.content||'';
+  ta.value='กำลังโหลดเนื้อหา...';ta.disabled=true;
+  document.getElementById('contentOv').classList.add('open');
+  // โหลดเฉพาะเนื้อหาของ SOP ตัวนี้แบบ on-demand — ไม่ต้องโหลดเนื้อหาของทุก SOP ไว้ล่วงหน้า
+  try{
+    var {data,error}=await _SB2.from('sops').select('content').eq('id',sid).single();
+    if(error)throw error;
+    ta.value=(data&&data.content)||'';
+  }catch(err){
+    console.error('โหลดเนื้อหา SOP ไม่สำเร็จ:',err);
+    ta.value='';
+    alert('โหลดเนื้อหาไม่สำเร็จ: '+(err&&err.message||err));
+  }
+  ta.disabled=false;
   ta.oninput=_updateContentCharCount;
   _updateContentCharCount();
-  document.getElementById('contentOv').classList.add('open');
-  setTimeout(function(){ta.focus();},50);
+  ta.focus();
 }
 function openContentModalFromSM(){
   if(!sCtx)return;
@@ -383,11 +394,20 @@ function closeContentModal(e){if(e.target===document.getElementById('contentOv')
 function closeContentModalD(){document.getElementById('contentOv').classList.remove('open');cCtx=null;}
 async function saveContentModal(){
   if(!cCtx)return;
-  var d=S[cCtx.dk],p=d.processes.find(function(x){return x.id===cCtx.pid;}),sop=p.sops.find(function(x){return x.id===cCtx.sid;});
-  if(!sop)return;
-  sop.content=document.getElementById('eContentBig').value;
+  var newContent=document.getElementById('eContentBig').value;
   var _btn=document.getElementById('contentSaveBtn');if(_btn){_btn.disabled=true;_btn.textContent='กำลังบันทึก…';}
-  await autoSave();
+  try{
+    // อัปเดตเฉพาะแถวนี้แถวเดียว — ไม่ดันข้อมูลทั้ง 142 SOP ขึ้นไปทุกครั้งที่แก้เนื้อหา 1 ฉบับ
+    var {error}=await _SB2.from('sops').update({content:newContent,has_content:newContent.trim().length>0}).eq('id',cCtx.sid);
+    if(error)throw error;
+    var d=S[cCtx.dk],p=d.processes.find(function(x){return x.id===cCtx.pid;}),sop=p.sops.find(function(x){return x.id===cCtx.sid;});
+    if(sop) sop.hasContent=newContent.trim().length>0;
+  }catch(err){
+    console.error('บันทึกเนื้อหา SOP ไม่สำเร็จ:',err);
+    alert('บันทึกไม่สำเร็จ: '+(err&&err.message||err));
+    if(_btn){_btn.disabled=false;_btn.textContent='บันทึก';}
+    return;
+  }
   if(_btn){_btn.disabled=false;_btn.textContent='บันทึก';}
   closeContentModalD();
   var oc=getOC();renderContent();sw(AD);restOC(oc);renderStats();
