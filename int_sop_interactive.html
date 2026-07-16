@@ -161,6 +161,7 @@ body{font-family:"Sarabun","Segoe UI",sans-serif;background:#f0f4f8;min-height:1
    </div>
    <div class="field-group"><label class="field-label">&#x1F517; Link เอกสาร</label><input class="field-input" id="eLnk" type="url" placeholder="https://..."></div>
    <div class="field-group"><label class="field-label">&#x1F4DD; หมายเหตุ</label><textarea class="field-input" id="eNt" rows="2"></textarea></div>
+   <div class="field-group"><label class="field-label">&#x1F4C4; เนื้อหารายละเอียด SOP (ขั้นตอนการปฏิบัติงานแบบเต็ม)</label><textarea class="field-input" id="eContent" rows="8" placeholder="เขียนรายละเอียดขั้นตอนการปฏิบัติงานของ SOP นี้ได้อย่างอิสระ..." style="resize:vertical"></textarea></div>
    <div class="section-divider">
     <div class="move-box">
      <div class="move-box-title">&#x1F4E6; ย้ายกลุ่ม SOP นี้ไปที่...</div>
@@ -204,7 +205,7 @@ async function loadS(){
     });
     r3.data.forEach(function(s){
       var p=procIndex[s.process_id];if(!p)return;
-      p.sops.push({id:s.id,name:s.name,person:s.person||'',notes:s.notes||'',status:s.status||'ร่าง',link:s.link||''});
+      p.sops.push({id:s.id,name:s.name,person:s.person||'',notes:s.notes||'',status:s.status||'ร่าง',link:s.link||'',content:s.content||''});
     });
     S=ns;
   }catch(err){
@@ -227,7 +228,7 @@ async function pushS(){
       p.sops.forEach(function(s,si){
         sopIds.push(s.id);
         sopRows.push({id:s.id,process_id:p.id,name:s.name,person:s.person||null,notes:s.notes||'',
-          status:s.status||'ร่าง',link:s.link||'',sort_order:si});
+          status:s.status||'ร่าง',link:s.link||'',content:s.content||'',sort_order:si});
       });
     });
   });
@@ -286,7 +287,7 @@ function renderContent(){
     var d=S[dk],c=d.color,ts=d.processes.reduce(function(s,p){return s+p.sops.length;},0);
     var cards=d.processes.map(function(proc){
       var chain='<div class="approval-chain">'+apS('Owner',proc.owner_status)+'<span class="ap-arrow">›</span>'+apS('หัวหน้า',proc.approver_status)+'<span class="ap-arrow">›</span>'+apS('รอง ผอ.',proc.deputy_status)+'<span class="ap-arrow">›</span>'+apS('ผอ.',proc.director_status)+'</div>';
-      var sops=proc.sops.map(function(sop){return '<div class="sop-item" style="background:'+c+'0d" onclick="openSM(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')"><div class="sop-item-info"><div class="sop-name">'+esc(sop.name)+'<span class="dept-tag" style="background:'+c+'">'+d.abbr+'</span></div><div class="sop-person">👤 '+esc(sop.person)+(sop.link?' \xb7 <a href="'+esc(sop.link)+'" target="_blank" onclick="event.stopPropagation()" style="color:'+c+'">🔗</a>':'')+'</div></div><span class="sop-sb '+sC(sop.status)+'">'+(sop.status||'ร่าง')+'</span><button class="sop-del-btn" onclick="event.stopPropagation();deleteSOP(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')" title="ลบ SOP">🗑</button></div>';}).join('');
+      var sops=proc.sops.map(function(sop){return '<div class="sop-item" style="background:'+c+'0d" onclick="openSM(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')"><div class="sop-item-info"><div class="sop-name">'+esc(sop.name)+'<span class="dept-tag" style="background:'+c+'">'+d.abbr+'</span></div><div class="sop-person">👤 '+esc(sop.person)+(sop.link?' \xb7 <a href="'+esc(sop.link)+'" target="_blank" onclick="event.stopPropagation()" style="color:'+c+'">🔗</a>':'')+(sop.content?' \xb7 <span title="มีเนื้อหารายละเอียดแล้ว" style="color:#10b981">📄 มีเนื้อหา</span>':' \xb7 <span title="ยังไม่มีเนื้อหารายละเอียด" style="color:#cbd5e1">📄 ยังไม่มีเนื้อหา</span>')+'</div></div><span class="sop-sb '+sC(sop.status)+'">'+(sop.status||'ร่าง')+'</span><button class="sop-del-btn" onclick="event.stopPropagation();deleteSOP(\''+dk+'\',\''+proc.id+'\',\''+sop.id+'\')" title="ลบ SOP">🗑</button></div>';}).join('');
       return '<div class="process-card" style="border-color:'+c+'55;background:'+c+'0a" data-proc-id="'+proc.id+'"><div class="card-header"><div class="card-header-left" onclick="toggleC(this.closest(\'.process-card\'))"><span class="drag-handle">⢳</span><div class="card-title-block"><div class="card-title" style="color:'+c+'">'+esc(proc.name)+'</div>'+chain+'</div></div><div class="card-header-right"><button class="icon-btn" title="แก้ไข" onclick="event.stopPropagation();openPM(\''+dk+'\',\''+proc.id+'\')">✏️</button><button class="icon-btn" title="ลบกระบวนการ" onclick="event.stopPropagation();deleteProc(\''+dk+'\',\''+proc.id+'\')" style="color:#ef4444">🗑</button><span class="badge" style="background:'+c+'">'+proc.sops.length+' SOP</span><span class="arrow" style="color:'+c+'" onclick="toggleC(this.closest(\'.process-card\'))">▼</span></div></div><div class="sop-list" style="border-color:'+c+'33">'+sops+'<button class="add-sop-btn" onclick="openAddSM(\''+dk+'\',\''+proc.id+'\')">＋ เพิ่มกระบวนการย่อย / SOP</button></div></div>';
     }).join('');
     return '<div class="dept-section '+(di===AD?'active':'')+'" id="dept-'+di+'"><div class="dept-header" style="background:'+c+'"><div><div class="dept-name">'+d.full+'</div><div class="dept-sub">'+ts+' SOP \xb7 '+d.processes.length+' กระบวนการ</div><div class="dept-hint">✏️ แก้ไข \xb7 คลิก SOP \xb7 ⢳ ลาก</div></div><span class="dept-abbr">'+d.abbr+'</span></div><div class="processes" id="grid-'+di+'">'+cards+'<div style="grid-column:1/-1"><button class="add-proc-btn" onclick="openAddPM(\''+dk+'\')">＋ เพิ่มกระบวนการหลัก</button></div></div></div>';
@@ -308,7 +309,7 @@ function buildMvProcOpts(dk,selPid){return S[dk].processes.map(function(p){retur
 function onMvDept(){var dk=document.getElementById('mvDept').value;document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,'');checkMvChanged();}
 function onMvProcChg(){checkMvChanged();}
 function checkMvChanged(){if(!sCtx)return;var nd=document.getElementById('mvDept').value,np=document.getElementById('mvProc').value,changed=(nd!==sCtx.dk||np!==sCtx.pid);document.getElementById('mvNote').style.display=changed?'block':'none';}
-function openSM(dk,pid,sid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});sCtx={dk:dk,pid:pid,sid:sid};document.getElementById('smTag').textContent=d.abbr;document.getElementById('smTag').style.background=d.color;document.getElementById('smProc').textContent=p.name;document.getElementById('eName').value=sop.name;document.getElementById('ePer').value=sop.person;document.getElementById('eSt').value=sop.status||'ร่าง';document.getElementById('eLnk').value=sop.link||'';document.getElementById('eNt').value=sop.notes||'';document.getElementById('mvDept').innerHTML=buildMvDeptOpts(dk);document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,pid);document.getElementById('mvNote').style.display='none';document.getElementById('smOv').classList.add('open');}
+function openSM(dk,pid,sid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});sCtx={dk:dk,pid:pid,sid:sid};document.getElementById('smTag').textContent=d.abbr;document.getElementById('smTag').style.background=d.color;document.getElementById('smProc').textContent=p.name;document.getElementById('eName').value=sop.name;document.getElementById('ePer').value=sop.person;document.getElementById('eSt').value=sop.status||'ร่าง';document.getElementById('eLnk').value=sop.link||'';document.getElementById('eNt').value=sop.notes||'';document.getElementById('eContent').value=sop.content||'';document.getElementById('mvDept').innerHTML=buildMvDeptOpts(dk);document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,pid);document.getElementById('mvNote').style.display='none';document.getElementById('smOv').classList.add('open');}
 function closeSM(e){if(e.target===document.getElementById('smOv'))closeSMd();}
 function closeSMd(){document.getElementById('smOv').classList.remove('open');sCtx=null;}
 async function saveSM(){
@@ -319,7 +320,7 @@ async function saveSM(){
   var origP=S[origDK].processes.find(function(x){return x.id===origPid;});
   if(origSid===null){
     /* adding new SOP */
-    var sop={id:'sop_'+Date.now(),name:document.getElementById('eName').value.trim(),person:document.getElementById('ePer').value.trim(),status:document.getElementById('eSt').value,link:document.getElementById('eLnk').value.trim(),notes:document.getElementById('eNt').value.trim()};
+    var sop={id:'sop_'+Date.now(),name:document.getElementById('eName').value.trim(),person:document.getElementById('ePer').value.trim(),status:document.getElementById('eSt').value,link:document.getElementById('eLnk').value.trim(),notes:document.getElementById('eNt').value.trim(),content:document.getElementById('eContent').value.trim()};
     var targetP=S[newDK].processes.find(function(x){return x.id===newPid;});
     targetP.sops.push(sop);
   }else{
@@ -330,6 +331,7 @@ async function saveSM(){
     sop.status=document.getElementById('eSt').value;
     sop.link=document.getElementById('eLnk').value.trim();
     sop.notes=document.getElementById('eNt').value.trim();
+    sop.content=document.getElementById('eContent').value.trim();
     /* move if changed */
     if(newDK!==origDK||newPid!==origPid){
       origP.sops=origP.sops.filter(function(x){return x.id!==origSid;});
@@ -345,7 +347,7 @@ async function saveSM(){
 }
 function render(){renderTabs();renderContent();renderStats();}
 function openAddPM(dk){var d=S[dk];pCtx={dk:dk,pid:null};document.getElementById('pmTag').textContent=d.abbr;document.getElementById('pmTag').style.background=d.color;document.getElementById('pmSub').textContent=d.full;document.getElementById('pmTitle').textContent='เพิ่มกระบวนการหลัก';document.getElementById('peName').value='';document.getElementById('peSt').value='ร่าง';document.getElementById('peOw').value='';document.getElementById('peOwS').value='pending';document.getElementById('peAp').value='';document.getElementById('peApS').value='pending';document.getElementById('peDp').value='';document.getElementById('peDpS').value='pending';document.getElementById('peDi').value='';document.getElementById('peDiS').value='pending';document.getElementById('pmOv').classList.add('open');}
-function openAddSM(dk,pid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;});sCtx={dk:dk,pid:pid,sid:null};document.getElementById('smTag').textContent=d.abbr;document.getElementById('smTag').style.background=d.color;document.getElementById('smProc').textContent=p.name;document.getElementById('smTitle').textContent='เพิ่มกระบวนการย่อย / SOP';document.getElementById('eName').value='';document.getElementById('ePer').value='';document.getElementById('eSt').value='ร่าง';document.getElementById('eLnk').value='';document.getElementById('eNt').value='';document.getElementById('mvDept').innerHTML=buildMvDeptOpts(dk);document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,pid);document.getElementById('mvNote').style.display='none';document.getElementById('smOv').classList.add('open');}
+function openAddSM(dk,pid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;});sCtx={dk:dk,pid:pid,sid:null};document.getElementById('smTag').textContent=d.abbr;document.getElementById('smTag').style.background=d.color;document.getElementById('smProc').textContent=p.name;document.getElementById('smTitle').textContent='เพิ่มกระบวนการย่อย / SOP';document.getElementById('eName').value='';document.getElementById('ePer').value='';document.getElementById('eSt').value='ร่าง';document.getElementById('eLnk').value='';document.getElementById('eNt').value='';document.getElementById('eContent').value='';document.getElementById('mvDept').innerHTML=buildMvDeptOpts(dk);document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,pid);document.getElementById('mvNote').style.display='none';document.getElementById('smOv').classList.add('open');}
 async function deleteProc(dk,pid){var p=S[dk].processes.find(function(x){return x.id===pid;});if(!confirm('ลบกระบวนการ "'+p.name+'" และ SOP ทั้งหมดในกระบวนการนี้ใช่ไหม?'))return;S[dk].processes=S[dk].processes.filter(function(x){return x.id!==pid;});var oc=getOC();await autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
 async function deleteSOP(dk,pid,sid){var p=S[dk].processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});if(!confirm('ลบ SOP "'+sop.name+'" ใช่ไหม?'))return;p.sops=p.sops.filter(function(x){return x.id!==sid;});var oc=getOC();await autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
 loadS().then(render);</script>
