@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tinymce@5.10.7/tinymce.min.js" referrerpolicy="origin"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Sarabun","Segoe UI",sans-serif;background:#f0f4f8;min-height:100vh;font-size:15px}
@@ -182,7 +183,7 @@ body{font-family:"Sarabun","Segoe UI",sans-serif;background:#f0f4f8;min-height:1
    <div style="display:flex;align-items:center;gap:8px"><span class="modal-dept-tag" id="contentSopTag"></span><button class="modal-close" onclick="closeContentModalD()">&#x2715;</button></div>
   </div>
   <div class="modal-body" style="padding:16px 20px">
-   <textarea id="eContentBig" placeholder="เขียนเนื้อหารายละเอียดของ SOP นี้ได้อย่างอิสระ เช่น วัตถุประสงค์ ขอบเขต ขั้นตอนการปฏิบัติงาน ผู้รับผิดชอบแต่ละขั้นตอน เอกสารอ้างอิง ฯลฯ (รองรับ Markdown)" style="width:100%;flex:1;resize:none;border:1.5px solid #e2e8f0;border-radius:10px;padding:16px;font-family:'Courier New',monospace;font-size:13.5px;line-height:1.6;outline:none"></textarea>
+   <textarea id="eContentBig" style="width:100%"></textarea>
   </div>
   <div class="modal-footer"><span style="margin-right:auto;font-size:12px;color:#94a3b8" id="contentCharCount"></span><button class="btn-mc" onclick="closeContentModalD()">ยกเลิก</button><button class="btn-ms" id="contentSaveBtn" onclick="saveContentModal()">บันทึก</button></div>
  </div>
@@ -356,9 +357,38 @@ async function saveSM(){
   closeSMd();renderContent();sw(AD);restOC(oc);renderStats();
 }
 function _updateContentCharCount(){
-  var ta=document.getElementById('eContentBig');
   var cc=document.getElementById('contentCharCount');
-  if(ta&&cc)cc.textContent=ta.value.length+' ตัวอักษร';
+  if(!cc)return;
+  var ed=(typeof tinymce!=='undefined')?tinymce.get('eContentBig'):null;
+  var plain=ed?ed.getContent({format:'text'}):'';
+  cc.textContent=plain.length+' ตัวอักษร';
+}
+function _initContentEditor(initialHtml,cb){
+  if(typeof tinymce==='undefined'){cb&&cb();return;}
+  var existing=tinymce.get('eContentBig');
+  if(existing){
+    existing.setContent(initialHtml||'');
+    cb&&cb();
+    return;
+  }
+  tinymce.init({
+    selector:'#eContentBig',
+    height:520,
+    menubar:false,
+    branding:false,
+    statusbar:false,
+    plugins:'table lists advlist',
+    toolbar:'undo redo | formatselect fontsizeselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | table | removeformat',
+    font_size_formats:'8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 36pt',
+    content_style:"body{font-family:'Sarabun',sans-serif;font-size:14px;line-height:1.6}table{border-collapse:collapse;width:100%}table td,table th{border:1px solid #cbd5e1;padding:6px 8px}",
+    setup:function(editor){
+      editor.on('init',function(){
+        editor.setContent(initialHtml||'');
+        editor.on('input keyup',_updateContentCharCount);
+        cb&&cb();
+      });
+    }
+  });
 }
 async function openContentModal(dk,pid,sid){
   var d=S[dk],p=d.processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});
@@ -368,23 +398,19 @@ async function openContentModal(dk,pid,sid){
   document.getElementById('contentSopTag').style.background=d.color;
   document.getElementById('contentSopProc').textContent=p.name;
   document.getElementById('contentSopName').textContent=sop.name;
-  var ta=document.getElementById('eContentBig');
-  ta.value='กำลังโหลดเนื้อหา...';ta.disabled=true;
   document.getElementById('contentOv').classList.add('open');
+  document.getElementById('contentCharCount').textContent='กำลังโหลด…';
   // โหลดเฉพาะเนื้อหาของ SOP ตัวนี้แบบ on-demand — ไม่ต้องโหลดเนื้อหาของทุก SOP ไว้ล่วงหน้า
+  var loaded='';
   try{
     var {data,error}=await _SB2.from('sops').select('content').eq('id',sid).single();
     if(error)throw error;
-    ta.value=(data&&data.content)||'';
+    loaded=(data&&data.content)||'';
   }catch(err){
     console.error('โหลดเนื้อหา SOP ไม่สำเร็จ:',err);
-    ta.value='';
     alert('โหลดเนื้อหาไม่สำเร็จ: '+(err&&err.message||err));
   }
-  ta.disabled=false;
-  ta.oninput=_updateContentCharCount;
-  _updateContentCharCount();
-  ta.focus();
+  _initContentEditor(loaded,_updateContentCharCount);
 }
 function openContentModalFromSM(){
   if(!sCtx)return;
@@ -394,14 +420,16 @@ function closeContentModal(e){if(e.target===document.getElementById('contentOv')
 function closeContentModalD(){document.getElementById('contentOv').classList.remove('open');cCtx=null;}
 async function saveContentModal(){
   if(!cCtx)return;
-  var newContent=document.getElementById('eContentBig').value;
+  var ed=(typeof tinymce!=='undefined')?tinymce.get('eContentBig'):null;
+  var newContent=ed?ed.getContent():'';
+  var plainCheck=ed?ed.getContent({format:'text'}).trim():'';
   var _btn=document.getElementById('contentSaveBtn');if(_btn){_btn.disabled=true;_btn.textContent='กำลังบันทึก…';}
   try{
     // อัปเดตเฉพาะแถวนี้แถวเดียว — ไม่ดันข้อมูลทั้ง 142 SOP ขึ้นไปทุกครั้งที่แก้เนื้อหา 1 ฉบับ
-    var {error}=await _SB2.from('sops').update({content:newContent,has_content:newContent.trim().length>0}).eq('id',cCtx.sid);
+    var {error}=await _SB2.from('sops').update({content:newContent,has_content:plainCheck.length>0}).eq('id',cCtx.sid);
     if(error)throw error;
     var d=S[cCtx.dk],p=d.processes.find(function(x){return x.id===cCtx.pid;}),sop=p.sops.find(function(x){return x.id===cCtx.sid;});
-    if(sop) sop.hasContent=newContent.trim().length>0;
+    if(sop) sop.hasContent=plainCheck.length>0;
   }catch(err){
     console.error('บันทึกเนื้อหา SOP ไม่สำเร็จ:',err);
     alert('บันทึกไม่สำเร็จ: '+(err&&err.message||err));
