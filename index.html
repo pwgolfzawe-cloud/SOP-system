@@ -1232,7 +1232,7 @@ async function _uploadAllStaffPhotos(){
   var btn=document.getElementById('staffPhotoUploadBtn');
   var statusEl=document.getElementById('staffPhotoStatus');
   btn.disabled=true;
-  var ok=0,fail=0;
+  var ok=0,fail=0,lastErr='';
   for(var i=0;i<_pendingStaffPhotos.length;i++){
     var item=_pendingStaffPhotos[i];
     var name=(item.name||'').trim();
@@ -1253,10 +1253,12 @@ async function _uploadAllStaffPhotos(){
     }catch(err){
       console.error('อัปโหลดรูป '+name+' ไม่สำเร็จ:',err);
       fail++;
+      lastErr=(err&&err.message)||String(err);
     }
   }
   btn.disabled=false;
-  statusEl.textContent='เสร็จแล้ว: สำเร็จ '+ok+' รูป'+(fail?' · ล้มเหลว '+fail+' รูป':'')+(ok?' — รีเฟรชหน้าเพื่อดูรูปใหม่':'');
+  statusEl.innerHTML='เสร็จแล้ว: สำเร็จ '+ok+' รูป'+(fail?' · ล้มเหลว '+fail+' รูป':'')+(ok?' — รีเฟรชหน้าเพื่อดูรูปใหม่':'')+
+    (lastErr?'<div style="color:#dc2626;margin-top:4px">สาเหตุ: '+_escHtml(lastErr)+'</div>':'');
   if(ok){_pendingStaffPhotos=[];document.getElementById('staffPhotoList').innerHTML='';document.getElementById('staffPhotoFiles').value='';}
 }
 function _staffPhoto(name) {
