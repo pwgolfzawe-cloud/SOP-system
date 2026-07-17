@@ -324,10 +324,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app-shared.js"></script>
 <script>
-_SB.auth.getSession().then(function(r){
-  if(!r.data.session){ location.href='index.html'; return; }
-  showDeptServiceCards('AD');
-});
+function _initDeptPage(){
+  _SB.auth.getSession().then(function(r){
+    if(!r.data.session){ location.href='index.html'; return; }
+    showDeptServiceCards('AD');
+  });
+}
+_initDeptPage();
+// เบราว์เซอร์ใช้ back/forward cache (bfcache) — พอกด back/forward กลับมาหน้านี้
+// จะ "คืนค่า" หน้าเดิมโดยไม่รันสคริปต์ใหม่ ทำให้ค้างอยู่ในสถานะที่ยังโหลดไม่เสร็จ (การ์ดว่างเปล่า)
+// ฟังอีเวนต์ pageshow แล้วรัน init ซ้ำทุกครั้งที่หน้าถูก "คืนค่า" แบบนี้ กันปัญหานี้ไว้
+window.addEventListener('pageshow', function(e){ if(e.persisted){ _initDeptPage(); } });
 </script>
 </body>
 </html>
