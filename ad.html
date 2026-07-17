@@ -334,7 +334,9 @@ _initDeptPage();
 // เบราว์เซอร์ใช้ back/forward cache (bfcache) — พอกด back/forward กลับมาหน้านี้
 // จะ "คืนค่า" หน้าเดิมโดยไม่รันสคริปต์ใหม่ ทำให้ค้างอยู่ในสถานะที่ยังโหลดไม่เสร็จ (การ์ดว่างเปล่า)
 // ฟังอีเวนต์ pageshow แล้วรัน init ซ้ำทุกครั้งที่หน้าถูก "คืนค่า" แบบนี้ กันปัญหานี้ไว้
-window.addEventListener('pageshow', function(e){ if(e.persisted){ _initDeptPage(); } });
+// bfcache restore ทำให้หน้าค้าง (ทั้งตอนกลับมาที่หน้านี้ และตอนกดกลับออกจากหน้านี้ไปหน้าอื่น
+// แล้วหน้าอื่นก็ค้างเหมือนกัน) วิธีที่ชัวร์ที่สุดคือรีโหลดใหม่ทั้งหมดทุกครั้งที่เจอ bfcache restore
+window.addEventListener('pageshow', function(e){ if(e.persisted){ location.reload(); } });
 </script>
 </body>
 </html>
