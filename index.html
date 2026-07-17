@@ -305,6 +305,7 @@ const _SB = supabase.createClient(
 var _staffPhotos = {};
 var _customStaffPhotos = {};
 var _pendingStaffPhotos = [];
+var _knownPersonNames = null;
 var _mCtx = {svcId:'', stepId:0, selected:{}, laneIdx:0, primLanes:[0], laneTemp:{}};
 var _sopFlat = [];
 var _editModeSvc = '';
@@ -1157,12 +1158,53 @@ function _guessNameFromFilename(fn){
   n=n.replace(/^\d+\s*/,'');
   return n;
 }
-function openStaffPhotoManager(){
+async function _loadKnownPersonNames(){
+  if(_knownPersonNames) return _knownPersonNames;
+  var names={};
+  try{
+    var [r1,r2]=await Promise.all([
+      _SB.from('processes').select('owner,approver,deputy,director'),
+      _SB.from('sops').select('person')
+    ]);
+    (r1.data||[]).forEach(function(row){
+      [row.owner,row.approver,row.deputy,row.director].forEach(function(n){
+        if(n&&n.trim()) names[n.trim()]=true;
+      });
+    });
+    (r2.data||[]).forEach(function(row){
+      if(row.person&&row.person.trim()) names[row.person.trim()]=true;
+    });
+  }catch(e){ console.error('โหลดรายชื่อในระบบไม่สำเร็จ:',e); }
+  _knownPersonNames=names;
+  var dl=document.getElementById('staffPhotoNameList');
+  dl.innerHTML=Object.keys(names).sort().map(function(n){return '<option value="'+_escHtml(n)+'">';}).join('');
+  return names;
+}
+function _isKnownPersonName(name){
+  if(!_knownPersonNames||!name) return false;
+  var clean=name.trim();
+  var clean2=clean.replace(/^(นาย|นาง|นางสาว)\s*/,'').trim();
+  return !!(_knownPersonNames[clean]||_knownPersonNames[clean2]);
+}
+function _staffPhotoMatchBadge(name){
+  var ok=_isKnownPersonName(name);
+  return ok
+    ? '<span style="font-size:10.5px;color:#16a34a;font-weight:700;white-space:nowrap">&#10003; ตรงกับชื่อในระบบ</span>'
+    : '<span style="font-size:10.5px;color:#ea580c;font-weight:700;white-space:nowrap">&#9888; ไม่พบชื่อนี้ในระบบ</span>';
+}
+function _onStaffPhotoNameInput(idx,el){
+  _pendingStaffPhotos[idx].name=el.value;
+  var badge=el.parentElement.querySelector('.staff-photo-badge');
+  if(badge) badge.outerHTML=_staffPhotoMatchBadge(el.value).replace('<span','<span class="staff-photo-badge"');
+}
+async function openStaffPhotoManager(){
   _pendingStaffPhotos=[];
   document.getElementById('staffPhotoList').innerHTML='';
   document.getElementById('staffPhotoFiles').value='';
-  document.getElementById('staffPhotoStatus').textContent='';
+  document.getElementById('staffPhotoStatus').textContent='กำลังโหลดรายชื่อในระบบ…';
   document.getElementById('staffPhotoBg').classList.add('open');
+  await _loadKnownPersonNames();
+  document.getElementById('staffPhotoStatus').textContent='';
 }
 function closeStaffPhotoManager(){document.getElementById('staffPhotoBg').classList.remove('open');}
 function _onStaffPhotoFilesChosen(ev){
@@ -1176,9 +1218,12 @@ function _onStaffPhotoFilesChosen(ev){
     var row=document.createElement('div');
     row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #e2e8f0;border-radius:8px';
     row.innerHTML=
-      '<img src="'+previewUrl+'" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid #e2e8f0">'+
-      '<input type="text" value="'+_escHtml(guessed)+'" placeholder="ชื่อ-นามสกุล" oninput="_pendingStaffPhotos['+idx+'].name=this.value" style="flex:1;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:6px;font-family:inherit;font-size:13px">'+
-      '<span style="font-size:11px;color:#94a3b8;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_escHtml(file.name)+'">'+_escHtml(file.name)+'</span>';
+      '<img src="'+previewUrl+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid #e2e8f0">'+
+      '<div style="flex:1;display:flex;flex-direction:column;gap:3px">'+
+        '<input type="text" list="staffPhotoNameList" value="'+_escHtml(guessed)+'" placeholder="ชื่อ-นามสกุล" oninput="_onStaffPhotoNameInput('+idx+',this)" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:6px;font-family:inherit;font-size:13px">'+
+        _staffPhotoMatchBadge(guessed).replace('<span','<span class="staff-photo-badge"')+
+      '</div>'+
+      '<span style="font-size:11px;color:#94a3b8;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_escHtml(file.name)+'">'+_escHtml(file.name)+'</span>';
     list.appendChild(row);
   });
 }
@@ -1639,6 +1684,7 @@ async function saveLaneModal(){
     <div class="step-modal-body" style="overflow-y:auto;padding:18px 22px">
       <div style="font-size:12.5px;color:#64748b;margin-bottom:12px;line-height:1.6">เลือกไฟล์รูปได้หลายไฟล์พร้อมกัน ระบบจะเดาชื่อจากชื่อไฟล์ให้อัตโนมัติ — ตรวจสอบ/แก้ชื่อให้ตรงกับชื่อที่ใช้ในระบบก่อนกดอัปโหลด (ชื่อต้องตรงกับที่กรอกไว้ในช่อง "ผู้รับผิดชอบ" ของ SOP ถึงจะขึ้นรูปให้)</div>
       <input type="file" id="staffPhotoFiles" accept="image/*" multiple onchange="_onStaffPhotoFilesChosen(event)" style="margin-bottom:14px;font-family:inherit;font-size:13px">
+      <datalist id="staffPhotoNameList"></datalist>
       <div id="staffPhotoList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
     <div class="step-modal-ftr">
