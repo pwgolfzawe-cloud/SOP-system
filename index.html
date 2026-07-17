@@ -1240,8 +1240,9 @@ async function _uploadAllStaffPhotos(){
     if(!name){fail++;continue;}
     try{
       var ext=(item.file.name.split('.').pop()||'jpg').toLowerCase();
-      var safeName=name.replace(/[^a-zA-Z0-9ก-๙]+/g,'_');
-      var path='staff/'+safeName+'-'+Date.now()+'.'+ext;
+      // Supabase Storage ไม่ยอมรับตัวอักษรไทยในชื่อไฟล์/พาธ (key) — ใช้ path ที่เป็น ASCII ล้วน
+      // ชื่อจริงเก็บอยู่ใน staff_photos.name (คอลัมน์ text ธรรมดา ใส่ภาษาไทยได้ปกติ) แยกจาก path
+      var path='staff/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
       var {error:upErr}=await _SB.storage.from('personnel-photo').upload(path,item.file,{upsert:true});
       if(upErr)throw upErr;
       var {data:pu}=_SB.storage.from('personnel-photo').getPublicUrl(path);
