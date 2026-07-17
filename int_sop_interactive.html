@@ -206,7 +206,7 @@ var _staffPhotosReadyPromise=(async function(){
 function _personIcon(name){
   var clean=(name||'').replace(/^(นาย|นาง|นางสาว)\s*/,'').trim();
   var url=_staffPhotoMap[name]||_staffPhotoMap[clean];
-  if(url) return '<img src="'+url+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:5px" onerror="this.style.display=\'none\'">';
+  if(url) return '<img src="'+url+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px" onerror="this.style.display=\'none\'">';
   return '\uD83D\uDC64';
 }
 async function loadS(){
