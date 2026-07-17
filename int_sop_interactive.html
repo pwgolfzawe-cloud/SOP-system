@@ -445,6 +445,19 @@ function openAddPM(dk){var d=S[dk];pCtx={dk:dk,pid:null};document.getElementById
 function openAddSM(dk,pid){var d=S[dk],p=d.processes.find(function(x){return x.id===pid;});sCtx={dk:dk,pid:pid,sid:null};document.getElementById('smTag').textContent=d.abbr;document.getElementById('smTag').style.background=d.color;document.getElementById('smProc').textContent=p.name;document.getElementById('smTitle').textContent='เพิ่มกระบวนการย่อย / SOP';document.getElementById('eName').value='';document.getElementById('ePer').value='';document.getElementById('eSt').value='ร่าง';document.getElementById('eLnk').value='';document.getElementById('eNt').value='';document.getElementById('mvDept').innerHTML=buildMvDeptOpts(dk);document.getElementById('mvProc').innerHTML=buildMvProcOpts(dk,pid);document.getElementById('mvNote').style.display='none';document.getElementById('smOv').classList.add('open');}
 async function deleteProc(dk,pid){var p=S[dk].processes.find(function(x){return x.id===pid;});if(!confirm('ลบกระบวนการ "'+p.name+'" และ SOP ทั้งหมดในกระบวนการนี้ใช่ไหม?'))return;S[dk].processes=S[dk].processes.filter(function(x){return x.id!==pid;});var oc=getOC();await autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
 async function deleteSOP(dk,pid,sid){var p=S[dk].processes.find(function(x){return x.id===pid;}),sop=p.sops.find(function(x){return x.id===sid;});if(!confirm('ลบ SOP "'+sop.name+'" ใช่ไหม?'))return;p.sops=p.sops.filter(function(x){return x.id!==sid;});var oc=getOC();await autoSave();renderContent();sw(AD);restOC(oc);renderStats();}
-loadS().then(render);</script>
+loadS().then(render).then(function(){
+  // ถ้ามี ?openSop=<id> ต่อท้าย URL (มาจากลิงก์ "แก้ไขเนื้อหานี้" ในหน้า Journey Map) ให้เปิด modal เนื้อหาของ SOP นั้นให้อัตโนมัติ
+  var params=new URLSearchParams(location.search);
+  var wantSid=params.get('openSop');
+  if(!wantSid)return;
+  for(var i=0;i<DO.length;i++){
+    var dk=DO[i];
+    for(var j=0;j<S[dk].processes.length;j++){
+      var p=S[dk].processes[j];
+      var sop=p.sops.find(function(x){return x.id===wantSid;});
+      if(sop){ sw(i); openContentModal(dk,p.id,wantSid); return; }
+    }
+  }
+});</script>
 </body>
 </html>

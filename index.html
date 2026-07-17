@@ -736,7 +736,7 @@ function buildJM(svc,editMode){
           var bAppr=typeof bVal==='object'?bVal.a:(_bSop.approver||'');
           var bColor=_bSop.color||c;
           var bTitle=bAppr?'SOP : '+bName+' | ผู้รับผิดชอบ: '+bAppr:'SOP : '+bName;
-          h+='<span class="jm-sop-badge" style="background:'+bColor+';color:#fff;flex-direction:column;align-items:flex-start;padding:4px 8px;gap:2px;margin-bottom:2px" title="'+bTitle+'">';
+          h+='<span class="jm-sop-badge" style="background:'+bColor+';color:#fff;flex-direction:column;align-items:flex-start;padding:4px 8px;gap:2px;margin-bottom:2px;cursor:pointer" title="'+bTitle+' — คลิกเพื่อดูเนื้อหา" onclick="event.stopPropagation();openSopContentView(\''+sid+'\')">';
           h+='<span style="font-size:8.5px;font-weight:800;opacity:.75;letter-spacing:.04em">SOP</span>';
           h+='<span style="font-size:10px;font-weight:700;line-height:1.35;word-break:break-word;white-space:normal">'+bName+'</span>';
           if(bAppr){
@@ -1109,6 +1109,32 @@ async function saveSOPModal() {
     });
 })();
 
+async function openSopContentView(sopId){
+  var bg=document.getElementById('sopContentViewBg');
+  var nameEl=document.getElementById('sopViewName');
+  var metaEl=document.getElementById('sopViewMeta');
+  var bodyEl=document.getElementById('sopViewBody');
+  var editLink=document.getElementById('sopViewEditLink');
+  nameEl.textContent='กำลังโหลด…';
+  metaEl.textContent='';
+  bodyEl.innerHTML='';
+  editLink.href='int_sop_interactive.html?openSop='+encodeURIComponent(sopId);
+  bg.classList.add('open');
+  try{
+    var {data,error}=await _SB.from('sops').select('name,content,person,status').eq('id',sopId).single();
+    if(error)throw error;
+    nameEl.textContent=(data&&data.name)||'SOP';
+    metaEl.textContent=(data&&data.person?'ผู้รับผิดชอบ: '+data.person+'  ·  ':'')+'สถานะ: '+((data&&data.status)||'ร่าง');
+    var html=(data&&data.content)||'';
+    var plain=html.replace(/<[^>]*>/g,'').replace(/&nbsp;/g,'').trim();
+    bodyEl.innerHTML=plain?html:'<div style="color:#94a3b8;font-style:italic;padding:24px 0;text-align:center">ยังไม่มีเนื้อหา — คลิก "แก้ไขเนื้อหานี้" ด้านล่างเพื่อเริ่มเขียน</div>';
+  }catch(err){
+    console.error('โหลดเนื้อหา SOP ไม่สำเร็จ:',err);
+    nameEl.textContent='โหลดไม่สำเร็จ';
+    bodyEl.innerHTML='<div style="color:#dc2626">โหลดเนื้อหาไม่สำเร็จ: '+((err&&err.message)||err)+'</div>';
+  }
+}
+function closeSopContentView(){document.getElementById('sopContentViewBg').classList.remove('open');}
 function _staffPhoto(name) {
   if (!name) return '';
   return _staffPhotos[name] || _staffPhotos[name.replace(/^(นาย|นาง|นางสาว)\s*/, '').trim()] || '';
@@ -1505,6 +1531,24 @@ async function saveLaneModal(){
 </div>
 
 <!-- Step Editor Modal -->
+<div class="step-modal-bg" id="sopContentViewBg" onclick="if(event.target===this)closeSopContentView()">
+  <div class="step-modal" style="width:min(820px,95vw);max-height:85vh">
+    <div class="step-modal-hdr">
+      <div>
+        <div class="step-modal-title" id="sopViewName" style="font-size:15px">เนื้อหา SOP</div>
+        <div style="font-size:11.5px;color:#64748b;margin-top:2px" id="sopViewMeta"></div>
+      </div>
+      <button class="sop-modal-close" onclick="closeSopContentView()">&#x2715;</button>
+    </div>
+    <div class="step-modal-body" style="overflow-y:auto;padding:18px 22px">
+      <div id="sopViewBody" style="font-size:14px;line-height:1.7;color:#1e293b"></div>
+    </div>
+    <div class="step-modal-ftr">
+      <a id="sopViewEditLink" href="#" style="margin-right:auto;font-size:12.5px;color:#005992;font-weight:700;text-decoration:none">&#x270F; แก้ไขเนื้อหานี้ &#x2192;</a>
+      <button class="btn-modal-cancel" onclick="closeSopContentView()">ปิด</button>
+    </div>
+  </div>
+</div>
 <div class="step-modal-bg" id="stepModalBg" onclick="if(event.target===this)closeStepModal()">
   <div class="step-modal">
     <div class="step-modal-hdr">
