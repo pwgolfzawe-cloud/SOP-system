@@ -734,9 +734,12 @@ function buildJM(svc,editMode){
         h+='<div class="jm-sop-badges">';
         linkedIds.forEach(function(sid){
           var bVal=linked[sid];
-          var bName=typeof bVal==='object'?bVal.n:bVal;
-          var _bSop=_sopFlat.find(function(x){return x.id===sid;})||{};
-          var bAppr=typeof bVal==='object'?bVal.a:(_bSop.approver||'');
+          var _bSop=_sopFlat.find(function(x){return x.id===sid;})||null;
+          // ยึดชื่อ/ผู้รับผิดชอบสดจาก _sopFlat (โหลดจาก Supabase ทุกครั้ง) เป็นหลัก
+          // ใช้ snapshot เก่าที่เก็บไว้ตอน link (bVal.n / .a) เป็นแค่ fallback กรณี SOP ถูกลบไปแล้วเท่านั้น
+          var bName=_bSop?_bSop.name:(typeof bVal==='object'?bVal.n:bVal);
+          var bAppr=_bSop?(_bSop.approver||''):(typeof bVal==='object'?bVal.a:'');
+          _bSop=_bSop||{};
           var bColor=_bSop.color||c;
           var bTitle=bAppr?'SOP : '+bName+' | ผู้รับผิดชอบ: '+bAppr:'SOP : '+bName;
           h+='<span class="jm-sop-badge" style="background:'+bColor+';color:#fff;flex-direction:column;align-items:flex-start;padding:4px 8px;gap:2px;margin-bottom:2px;cursor:pointer" title="'+bTitle+' — คลิกเพื่อดูเนื้อหา" onclick="event.stopPropagation();openSopContentView(\''+sid+'\')">';
@@ -843,9 +846,10 @@ function buildSL(svc){
           h+='<div class="sl-sop-badges">';
           linkedIds.forEach(function(sid){
             var bVal=linked[sid];
-            var bName=typeof bVal==='object'?bVal.n:bVal;
-            var bAppr=typeof bVal==='object'?bVal.a:'';
-            var _bSop=_sopFlat.find(function(x){return x.id===sid;})||{};
+            var _bSop=_sopFlat.find(function(x){return x.id===sid;})||null;
+            var bName=_bSop?_bSop.name:(typeof bVal==='object'?bVal.n:bVal);
+            var bAppr=_bSop?(_bSop.approver||''):(typeof bVal==='object'?bVal.a:'');
+            _bSop=_bSop||{};
             var bColor=_bSop.color||c;
             h+='<div class="sl-sop-badge" style="background:'+bColor+'">';
             h+='<span style="font-size:7.5px;font-weight:800;opacity:.7;letter-spacing:.04em">SOP</span>';
