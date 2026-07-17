@@ -1271,7 +1271,7 @@ function _staffPhoto(name) {
 
 function _personAvatar(name) {
   var url = _staffPhoto(name);
-  var style = 'width:20px;height:20px;border-radius:50%;vertical-align:middle;flex-shrink:0;';
+  var style = 'width:26px;height:26px;border-radius:50%;vertical-align:middle;flex-shrink:0;';
   if (url) {
     return '<img src="' + url + '" style="' + style + 'object-fit:cover;border:1.5px solid rgba(255,255,255,.5)" onerror="this.style.display=\'none\'">';
   }
